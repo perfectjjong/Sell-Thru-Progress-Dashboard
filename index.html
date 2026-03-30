@@ -328,7 +328,7 @@ function _rsmAutoPopulateFromIrTarget(){ if(!RAW) return;
 // On page load: fetch RSM FCST from GitHub (no token needed — public read)
 // Cloud wins if cloud._updated is newer than local _localUpdated; otherwise local wins (unsaved edits)
 (function _rsmCloudLoad(){
-  fetch('./rsm_fcst_data.json?_='+Date.now())
+  fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{headers:{'Accept':'application/vnd.github.v3.raw'}})
   .then(function(r){return r.ok?r.json():null;})
   .then(function(d){
     if(!d||!d._updated){_rsmAutoPopulateFromIrTarget();if(typeof renderAll==='function'){ if(RAW) renderAll(); };return;}
@@ -1504,7 +1504,7 @@ function _memoSyncNow(){
 }
 // Auto-load memo from cloud on page open (public read, no token needed)
 (function _memoCloudLoad(){
-  fetch('./memo_data.json?_='+Date.now())
+  fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_MEMO_FILE,{headers:{'Accept':'application/vnd.github.v3.raw'}})
   .then(function(r){return r.ok?r.json():null;})
   .then(function(cloud){
     var local=_memoLoad();
