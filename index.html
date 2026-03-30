@@ -447,6 +447,32 @@ function buildFilterBar(){
     wrap.className='ms-wrap';
     const avail=available(d.key);
     const isDn=(d.key==='account'||d.key==='team');
+    if(d.key==='team'){
+      var prevTeamAvailKey=SEL._teamAvailKey||'';
+      var curTeamAvailKey=[...avail].sort().join('|');
+      if(prevTeamAvailKey!==curTeamAvailKey){
+        SEL[d.key]=new Set(avail);
+        SEL._teamAvailKey=curTeamAvailKey;
+      } else {
+        var newSel=new Set();
+        SEL[d.key].forEach(function(v){ if(avail.has(v)) newSel.add(v); });
+        if(newSel.size===0) newSel=new Set(avail);
+        SEL[d.key]=newSel;
+      }
+    }
+    if(d.key==='account'){
+      var prevAvailKey=SEL._accountAvailKey||'';
+      var curAvailKey=[...avail].sort().join('|');
+      if(prevAvailKey!==curAvailKey){
+        SEL[d.key]=new Set(avail);
+        SEL._accountAvailKey=curAvailKey;
+      } else {
+        var newSel=new Set();
+        SEL[d.key].forEach(function(v){ if(avail.has(v)) newSel.add(v); });
+        if(newSel.size===0) newSel=new Set(avail);
+        SEL[d.key]=newSel;
+      }
+    }
     const totalCount=isDn?avail.size:ALL[d.key].size;
     const selCount=isDn?[...SEL[d.key]].filter(v=>avail.has(v)).length:SEL[d.key].size;
     const btn=document.createElement('div');
@@ -489,32 +515,6 @@ function buildFilterBar(){
     const list=document.createElement('div');
     list.className='ms-list';
     if(d.key==='account') list.style.maxHeight='300px';
-    if(d.key==='team'){
-      var prevTeamAvailKey=SEL._teamAvailKey||'';
-      var curTeamAvailKey=[...avail].sort().join('|');
-      if(prevTeamAvailKey!==curTeamAvailKey){
-        SEL[d.key]=new Set(avail);
-        SEL._teamAvailKey=curTeamAvailKey;
-      } else {
-        var newSel=new Set();
-        SEL[d.key].forEach(function(v){ if(avail.has(v)) newSel.add(v); });
-        if(newSel.size===0) newSel=new Set(avail);
-        SEL[d.key]=newSel;
-      }
-    }
-    if(d.key==='account'){
-      var prevAvailKey=SEL._accountAvailKey||'';
-      var curAvailKey=[...avail].sort().join('|');
-      if(prevAvailKey!==curAvailKey){
-        SEL[d.key]=new Set(avail);
-        SEL._accountAvailKey=curAvailKey;
-      } else {
-        var newSel=new Set();
-        SEL[d.key].forEach(function(v){ if(avail.has(v)) newSel.add(v); });
-        if(newSel.size===0) newSel=new Set(avail);
-        SEL[d.key]=newSel;
-      }
-    }
     var isDownstream=(d.key==='account' || d.key==='team');
     var renderSet=isDownstream?[...avail]:[...ALL[d.key]];
     if(d.key==='div') renderSet=DIV_ORDER.filter(function(v){return ALL[d.key].has(v);});
