@@ -296,18 +296,31 @@ function _rsmSyncNow(){
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   // First get current SHA
   fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}})
-  .then(function(r){return r.json();})
+  .then(function(r){
+    if(!r.ok){
+      return r.json().then(function(e){
+        var msg=e.message||('HTTP '+r.status);
+        if(r.status===401||r.status===403){
+          throw new Error('🔑 토큰 오류 ('+r.status+'): '+msg+'\n\n⚙️ Sync Setup 버튼을 눌러 GitHub 토큰을 다시 입력하세요.');
+        }
+        throw new Error('GET 실패 ('+r.status+'): '+msg);
+      });
+    }
+    return r.json();
+  })
   .then(function(d){
+    var body={message:'Update RSM FCST data '+new Date().toISOString().slice(0,10),content:content};
+    if(d&&d.sha) body.sha=d.sha;
     return fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{
       method:'PUT',headers:{'Authorization':'token '+token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
-      body:JSON.stringify({message:'Update RSM FCST data '+new Date().toISOString().slice(0,10),content:content,sha:d.sha})
+      body:JSON.stringify(body)
     });
   })
   .then(function(r){
     if(r.ok){ if(btn){btn.textContent='☁️ RSM Sync';btn.disabled=false;} alert('✅ RSM FCST synced!\nAll devices will load the latest data on next page refresh.'); }
-    else{ r.json().then(function(e){ if(btn){btn.textContent='☁️ RSM Sync';btn.disabled=false;} alert('❌ Save failed: '+e.message); }); }
+    else{ r.json().then(function(e){ if(btn){btn.textContent='☁️ RSM Sync';btn.disabled=false;} alert('❌ Save failed: '+e.message+'\n\n토큰 만료 시 ⚙️ Sync Setup에서 재입력하세요.'); }); }
   })
-  .catch(function(e){ if(btn){btn.textContent='☁️ RSM Sync';btn.disabled=false;} alert('❌ Network error: '+e.message); });
+  .catch(function(e){ if(btn){btn.textContent='☁️ RSM Sync';btn.disabled=false;} alert('❌ RSM Sync 오류:\n'+e.message); });
 }
 // Auto-populate RSM FCST from IR Mar Target (only fills accounts with no manual entry)
 function _rsmAutoPopulateFromIrTarget(){ if(!RAW) return;
@@ -1495,10 +1508,21 @@ function _memoSyncNow(){
   var payload={or:d.or||'',ir:d.ir||'',_updated:new Date().toISOString()};
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_MEMO_FILE,{headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}})
-  .then(function(r){return r.json();})
+  .then(function(r){
+    if(!r.ok&&r.status!==404){
+      return r.json().then(function(e){
+        var msg=e.message||('HTTP '+r.status);
+        if(r.status===401||r.status===403){
+          throw new Error('🔑 토큰 오류 ('+r.status+'): '+msg+'\n\n⚙️ RSM Sync Setup 버튼을 눌러 GitHub 토큰을 다시 입력하세요.');
+        }
+        throw new Error('GET 실패 ('+r.status+'): '+msg);
+      });
+    }
+    return r.json();
+  })
   .then(function(info){
     var body={message:'Update meeting memo '+new Date().toISOString().slice(0,10),content:content};
-    if(info.sha) body.sha=info.sha;
+    if(info&&info.sha) body.sha=info.sha;
     return fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_MEMO_FILE,{
       method:'PUT',headers:{'Authorization':'token '+token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'},
       body:JSON.stringify(body)
@@ -1511,10 +1535,10 @@ function _memoSyncNow(){
       if(st) st.textContent='✅ Synced '+new Date().toLocaleTimeString();
       alert('✅ Memo synced!\n다른 기기에서 새로고침하면 최신 메모가 표시됩니다.');
     } else {
-      r.json().then(function(e){if(btn){btn.textContent='☁️ Memo Sync';btn.disabled=false;} alert('❌ Save failed: '+e.message);});
+      r.json().then(function(e){if(btn){btn.textContent='☁️ Memo Sync';btn.disabled=false;} alert('❌ Save failed: '+e.message+'\n\n토큰 만료 시 ⚙️ Sync Setup에서 재입력하세요.');});
     }
   })
-  .catch(function(e){if(btn){btn.textContent='☁️ Memo Sync';btn.disabled=false;} alert('❌ Network error: '+e.message);});
+  .catch(function(e){if(btn){btn.textContent='☁️ Memo Sync';btn.disabled=false;} alert('❌ Memo Sync 오류:\n'+e.message);});
 }
 // Auto-load memo from cloud on page open (public read, no token needed)
 (function _memoCloudLoad(){
