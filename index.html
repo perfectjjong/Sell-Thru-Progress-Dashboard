@@ -296,9 +296,10 @@ function _rsmSyncNow(){
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   function _doRsmSync(retries){
     // cache:'no-store' prevents browser from returning cached raw content (no sha) instead of metadata
+    // NOTE: Cache-Control header removed — GitHub CORS does not allow it (causes "Failed to fetch")
     fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{
       cache:'no-store',
-      headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Cache-Control':'no-cache'}
+      headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}
     })
     .then(function(r){
       if(!r.ok){
@@ -1525,9 +1526,10 @@ function _memoSyncNow(){
   var content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
   function _doMemoSync(retries){
     // cache:'no-store' prevents browser from returning cached raw content (no sha) instead of metadata
+    // NOTE: Cache-Control header removed — GitHub CORS does not allow it (causes "Failed to fetch")
     fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_MEMO_FILE,{
       cache:'no-store',
-      headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json','Cache-Control':'no-cache'}
+      headers:{'Authorization':'token '+token,'Accept':'application/vnd.github.v3+json'}
     })
     .then(function(r){
       if(!r.ok&&r.status!==404){
