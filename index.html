@@ -796,9 +796,10 @@ function renderArKPI(){
   var totalBal=0, totalOvd=0, acctCnt=0;
   Object.keys(AR_SNAP.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
-    // Include if: (1) in filtered sell-thru accounts OR (2) AR-only account (no sell-thru)
+    // Include if: (1) in filtered sell-thru accounts OR (2) AR-only account (no sell-thru, Others div selected)
     var inSellThru=!!ACCT_TEAM[nid];
     if(inSellThru && !filteredIds.has(nid)) return; // sell-thru account but filtered out
+    if(!inSellThru && !SEL.div.has('Others')) return; // AR-only: respect div filter
     totalBal+=(AR_SNAP.accts[id].bal||0);
     totalOvd+=(AR_SNAP.accts[id].ovd||0);
     acctCnt++;
@@ -816,6 +817,7 @@ function renderArKPI(){
           var nid=isNaN(+id)?id:+id;
           var inSellThru=!!ACCT_TEAM[nid];
           if(inSellThru && !filteredIds.has(nid)) return;
+          if(!inSellThru && !SEL.div.has('Others')) return; // AR-only: respect div filter
           prevOvd+=(prevSnap.accts[id].ovd||0);
         });
       }
@@ -827,6 +829,7 @@ function renderArKPI(){
       var nid=isNaN(+id)?id:+id;
       var inSellThru=!!ACCT_TEAM[nid];
       if(inSellThru && !filteredIds.has(nid)) return;
+      if(!inSellThru && !SEL.div.has('Others')) return; // AR-only: respect div filter
       colMtd+=(COL_SNAP.accts[id].mtd||0);
       colYtd+=(COL_SNAP.accts[id].ytd||0);
     });
@@ -1065,8 +1068,9 @@ function renderTopTable(){
         // Account in filtered sell-thru → merge AR data
         am[nid].ar_bal=a.bal||0; am[nid].ar_ovd=a.ovd||0;
         am[nid].ar_o1=a.o1||0; am[nid].ar_o2=a.o2||0; am[nid].ar_o3=a.o3||0;
-      } else if(!ACCT_TEAM[nid]){
+      } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
         // Truly AR-only: no sell-thru history at all → add as "AR Only"
+        // Respects div filter: 'AR Only' maps to Others division → only show when Others is selected
         am[nid]={id:nid,nm:a.nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
                  oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
@@ -1083,8 +1087,9 @@ function renderTopTable(){
       if(am[nid]){
         am[nid].col_mtd=COL_SNAP.accts[id].mtd||0;
         am[nid].col_ytd=COL_SNAP.accts[id].ytd||0;
-      } else if(!ACCT_TEAM[nid]){
+      } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
         // Truly collection-only: no sell-thru history
+        // Respects div filter: maps to Others division
         am[nid]={id:nid,nm:COL_SNAP.accts[id].nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
                  oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,
