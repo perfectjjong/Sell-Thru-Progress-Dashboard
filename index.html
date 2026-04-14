@@ -327,12 +327,15 @@ function _rsmAutoPopulateFromIrTarget(){ if(!RAW) return;
 }
 // On page load: fetch RSM FCST from GitHub (no token needed — public read)
 // Cloud wins if cloud._updated is newer than local _localUpdated; otherwise local wins (unsaved edits)
+// _clear_local flag: bot-generated data forces cloud override (clears stale localStorage cache)
 (function _rsmCloudLoad(){
   fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{headers:{'Accept':'application/vnd.github.v3.raw'}})
   .then(function(r){return r.ok?r.json():null;})
   .then(function(d){
     if(!d||!d._updated){_rsmAutoPopulateFromIrTarget();if(typeof renderAll==='function'){ if(RAW) renderAll(); };return;}
     var cloudTs=new Date(d._updated).getTime()||0;
+    // _clear_local: bot uploaded authoritative data → reset stale localStorage timestamp
+    if(d._clear_local){ try{localStorage.setItem(_RSM_LOCAL_TS_KEY,'0');}catch(e){} }
     var localTs=parseInt(localStorage.getItem(_RSM_LOCAL_TS_KEY)||'0',10);
     // Cloud wins if it's newer than last local save (or local never saved)
     if(cloudTs>=localTs){
