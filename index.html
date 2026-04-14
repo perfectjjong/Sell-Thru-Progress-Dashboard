@@ -326,26 +326,10 @@ function _rsmAutoPopulateFromIrTarget(){ if(!RAW) return;
   }
 }
 // On page load: fetch RSM FCST from GitHub (no token needed — public read)
-// Cloud wins if cloud._updated is newer than local _localUpdated; otherwise local wins (unsaved edits)
-// _clear_local flag: bot-generated data forces cloud override (clears stale localStorage cache)
-(function _rsmCloudLoad(){
-  fetch('https://api.github.com/repos/'+_RSM_REPO+'/contents/'+_RSM_FILE,{headers:{'Accept':'application/vnd.github.v3.raw'}})
-  .then(function(r){return r.ok?r.json():null;})
-  .then(function(d){
-    if(!d||!d._updated){_rsmAutoPopulateFromIrTarget();if(typeof renderAll==='function'){ if(RAW) renderAll(); };return;}
-    var cloudTs=new Date(d._updated).getTime()||0;
-    // _clear_local: bot uploaded authoritative data → reset stale localStorage timestamp
-    if(d._clear_local){ try{localStorage.setItem(_RSM_LOCAL_TS_KEY,'0');}catch(e){} }
-    var localTs=parseInt(localStorage.getItem(_RSM_LOCAL_TS_KEY)||'0',10);
-    // Cloud wins if it's newer than last local save (or local never saved)
-    if(cloudTs>=localTs){
-      if(d.value){ _rsmStore.value=d.value; try{localStorage.setItem(_RSM_KEYS.value,JSON.stringify(_rsmStore.value));}catch(e){} }
-      if(d.qty){   _rsmStore.qty=d.qty;     try{localStorage.setItem(_RSM_KEYS.qty,  JSON.stringify(_rsmStore.qty));}catch(e){} }
-    }
-    _rsmAutoPopulateFromIrTarget();
-    if(typeof renderAll==='function') { if(RAW) renderAll(); };
-  }).catch(function(){_rsmAutoPopulateFromIrTarget();if(typeof renderAll==='function'){ if(RAW) renderAll(); };});
-})();
+// RSM FCST: loaded from data.json (embedded) via the ASYNC DATA LOADER below.
+// No separate GitHub API fetch needed → no rate-limit issues.
+// _rsmFcstLoaded flag prevents double-loading.
+var _rsmFcstLoaded=false;
 
 // ======== STATE ========
 let mode='value';
@@ -1454,10 +1438,32 @@ function renderAll(){
     .then(function(r){ return r.json(); })
     .then(function(d){
       RAW=d;
+      // RSM FCST: primary source is data.json embedded (no GitHub API rate limit)
+      if(d.rsm_fcst&&d.rsm_fcst.value){
+        _rsmStore.value=d.rsm_fcst.value;
+        _rsmStore.qty=d.rsm_fcst.qty||{};
+        try{localStorage.setItem(_RSM_KEYS.value,JSON.stringify(_rsmStore.value));}catch(e){}
+        try{localStorage.setItem(_RSM_KEYS.qty,JSON.stringify(_rsmStore.qty));}catch(e){}
+        try{localStorage.setItem(_RSM_LOCAL_TS_KEY,'0');}catch(e){}
+        _rsmFcstLoaded=true;
+      }
       _initRawDeps();
       _initFilters();
       renderAll();
       if(ldr) ldr.style.display='none';
+      // Fallback: if rsm_fcst not in data.json, fetch from raw.githubusercontent.com (no rate limit)
+      if(!_rsmFcstLoaded){
+        fetch('https://raw.githubusercontent.com/'+_RSM_REPO+'/main/'+_RSM_FILE+'?_='+Date.now())
+        .then(function(r){return r.ok?r.json():null;})
+        .then(function(dd){
+          if(!dd||!dd.value) return;
+          _rsmStore.value=dd.value; _rsmStore.qty=dd.qty||{};
+          try{localStorage.setItem(_RSM_KEYS.value,JSON.stringify(_rsmStore.value));}catch(e){}
+          try{localStorage.setItem(_RSM_KEYS.qty,JSON.stringify(_rsmStore.qty));}catch(e){}
+          try{localStorage.setItem(_RSM_LOCAL_TS_KEY,'0');}catch(e){}
+          renderAll();
+        }).catch(function(){});
+      }
     })
     .catch(function(e){
       if(ldr) ldr.innerHTML='<div style="text-align:center"><div style="font-size:20px;margin-bottom:8px">Failed to load data</div><div style="font-size:13px;color:#ef4444">'+e.message+'</div><div style="margin-top:12px"><button onclick="location.reload()" style="padding:8px 20px;background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer">Retry</button></div></div>';
