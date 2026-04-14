@@ -1024,6 +1024,28 @@ function renderTopTable(){
     else if(yr===2025){am[id].v25+=r[C.VL];am[id].q25+=r[C.QT];}
     else if(yr===2026){am[id].v26+=r[C.VL];am[id].q26+=r[C.QT];}
   });
+  // Add RSM FCST accounts missing from current period (period-independent fix)
+  // RSM FCST = monthly/annual target → must show even if account has no sell-thru in selected period
+  (function(){
+    var _ml=RAW.master||[];
+    var rsmMap=_rsmStore.value||{};
+    Object.keys(rsmMap).forEach(function(id){
+      var nid=isNaN(+id)?id:+id;
+      if(am[nid]) return; // already in table
+      var fcstVal=rsmMap[id]; if(!fcstVal) return;
+      var nm=String(nid), tm=ACCT_TEAM[nid]||null, st='Active';
+      for(var mi=0;mi<_ml.length;mi++){
+        var lid=_ml[mi].id;
+        if(Math.abs(+lid-nid)<0.5){nm=_ml[mi].name||nm;if(!tm)tm=_ml[mi].team||'IR';st=_ml[mi].status||st;break;}
+      }
+      if(!tm) tm='IR';
+      if(!SEL.team.has(tm)||!SEL.div.has(getDiv(tm))) return; // filtered out
+      am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
+               pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
+               opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
+               ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+    });
+  })();
   // OUD merge (category-aware)
   var oud=RAW.oud;
   if(oud&&oud.current){
