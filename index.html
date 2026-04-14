@@ -1154,6 +1154,29 @@ function renderTopTable(){
       am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:itgt.mar_tq||0,mar_tv:itgt.mar_tv||0};
     });
   }
+  // [FIX] Ensure ALL RSM FCST accounts appear in table regardless of date filter
+  // RSM FCST is a monthly target — date filter should NOT drop accounts from RSM total
+  // Without this: April-only filter drops IR accounts with no April sell-thru → 15.2M→10.2M
+  {var _rsmAllAccs=Object.keys(_rsmStore.value||{});
+  var _rsmMl=RAW.master||[];
+  _rsmAllAccs.forEach(function(id){
+    var nid=isNaN(+id)?id:+id;
+    if(am[nid]) return; // already in table
+    if(!_rsmGet(nid)) return; // no RSM FCST
+    // ACCT_TEAM populated from all-time txn history (no date filter) → correct team
+    var tm=ACCT_TEAM[nid];
+    if(!tm&&RAW.ir_target&&RAW.ir_target[id]) tm='IR';
+    if(!tm){for(var mi=0;mi<_rsmMl.length;mi++){if(+_rsmMl[mi].id===nid){tm=_rsmMl[mi].team;break;}}}
+    if(!tm) tm='IR';
+    if(!SEL.team.has(tm)||!SEL.div.has(getDiv(tm))) return;
+    var nm=String(nid),st='Active';
+    if(RAW.ir_target&&RAW.ir_target[id]){nm=RAW.ir_target[id].nm||nm;}
+    for(var mi=0;mi<_rsmMl.length;mi++){if(+_rsmMl[mi].id===nid){nm=_rsmMl[mi].name||nm;st=_rsmMl[mi].status||st;break;}}
+    am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
+             pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
+             opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
+             ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+  });}
   _tblData=Object.values(am);
   // Update AR Only count
   var arOnlyCntEl=document.getElementById('arOnlyCount');
