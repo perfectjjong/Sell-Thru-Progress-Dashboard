@@ -1276,7 +1276,7 @@ function buildTable(arr){
   h+='<th rowspan="2" class="fz fz2" style="'+thStyle+'" onclick="sortTable(\'nm\')">Account'+arrow('nm')+'</th>';
   h+='<th rowspan="2" class="fz fz3" style="'+thStyle+'" onclick="sortTable(\'tm\')">Team'+arrow('tm')+'</th>';
   h+='<th rowspan="2" class="fz fz4" style="'+thStyle+'" onclick="sortTable(\'st\')">Status'+arrow('st')+'</th>';
-  h+='<th rowspan="2" class="col-group" style="background:#1e3a5f;color:#60a5fa;cursor:pointer;" onclick="sortTable(\'rsm_fcst\')">RSM FCST (SAR)'+arrow('rsm_fcst')+'</th>';
+  h+='<th rowspan="2" class="col-group" style="background:#1e3a5f;color:#60a5fa;cursor:pointer;" onclick="sortTable(\'rsm_fcst\')">RSM FCST ('+(isVal?'SAR':'Set')+')'+arrow('rsm_fcst')+'</th>';
   h+='<th colspan="3" class="col-group g-sell">SELL-THRU ('+unitLabel+')</th>';
   if(hasPgi) h+='<th colspan="'+(hasPgiPrev?2:1)+'" class="col-group g-pgi">PGI ('+unitLabel+')</th>';
   if(hasRemain) h+='<th colspan="'+(hasRemPrev?2:1)+'" class="col-group g-remain">REMAIN ('+unitLabel+')</th>';
