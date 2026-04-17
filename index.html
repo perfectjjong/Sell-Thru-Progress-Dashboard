@@ -1089,6 +1089,33 @@ function renderTopTable(){
       });
     }
   }
+  // [FIX] Inject accounts from PGI/Remain/Open that are missing from table due to date period filter
+  // KPI card uses getFilteredIdsNoPeriod() (no date filter), table uses passFilterExceptYear (with date filter)
+  // → accounts with PGI/Remain/Open data but no sell-thru in selected period are missing from table
+  // This injection ensures table sum == KPI card sum
+  {
+    var _noPeriodIds=getFilteredIdsNoPeriod();
+    var _ml3=RAW.master||[];
+    [RAW.pgi,RAW.remain,RAW.open].forEach(function(raw){
+      var cur=_proCur(raw);
+      if(!cur||!cur.accts) return;
+      Object.keys(cur.accts).forEach(function(id){
+        var nid=isNaN(+id)?id:+id;
+        if(am[nid]) return; // already in table
+        if(!_noPeriodIds.has(nid)) return; // doesn't pass team/div/cat filter
+        var tm=ACCT_TEAM[nid]||null, nm=String(nid), st='Active';
+        for(var mi=0;mi<_ml3.length;mi++){
+          if(Math.abs(+_ml3[mi].id-nid)<0.5){if(!tm)tm=_ml3[mi].team;nm=_ml3[mi].name||nm;st=_ml3[mi].status||st;break;}
+        }
+        if(!tm) tm='IR';
+        if(!SEL.team.has(tm)||!SEL.div.has(getDiv(tm))) return; // team/div filtered out
+        am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
+                 pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
+                 opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
+                 ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+      });
+    });
+  }
   // PGI/Remain/Open merge (current + delta from prev)
   function mergePro(raw, vKey, qKey, dvKey, dqKey){
     var cur=_proCur(raw);
