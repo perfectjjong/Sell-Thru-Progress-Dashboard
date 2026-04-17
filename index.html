@@ -724,10 +724,18 @@ function renderPgiSubCards(isVal,lb){
   function calcTotal(snap){
     if(!snap||!snap.accts) return {v:0,q:0,cnt:0};
     var tv=0,tq=0,cnt=0;
+    var catFiltered=isCatFiltered();
     Object.keys(snap.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
       if(!filteredIds.has(nid)) return;
-      tv+=(snap.accts[id].v||0); tq+=(snap.accts[id].q||0); cnt++;
+      var acct=snap.accts[id];
+      var cv,cq;
+      if(catFiltered&&acct.c){
+        cv=0;cq=0;
+        Object.keys(acct.c).forEach(function(cat){if(SEL.cat.has(cat)){cv+=acct.c[cat].v||0;cq+=acct.c[cat].q||0;}});
+      }else{cv=acct.v||0;cq=acct.q||0;}
+      if(catFiltered&&cv===0&&cq===0) return;
+      tv+=cv;tq+=cq;cnt++;
     });
     return {v:tv,q:tq,cnt:cnt};
   }
