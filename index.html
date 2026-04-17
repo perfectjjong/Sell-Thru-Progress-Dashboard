@@ -417,6 +417,12 @@ function passFilter(r){
 }
 function getFiltered(){ return RAW.txn.filter(passFilter); }
 function getFilteredIds(){ return new Set(getFiltered().map(function(r){return r[C.ID];})); }
+// For PGI/Remain/Open: filters all dimensions EXCEPT date period (snapshots are period-independent)
+function passFilterNoPeriod(r){
+  for(const d of DIMS) if(!SEL[d.key].has(colVal(r,d))) return false;
+  return true;
+}
+function getFilteredIdsNoPeriod(){ return new Set(RAW.txn.filter(passFilterNoPeriod).map(function(r){return r[C.ID];})); }
 // For growth rate baselines: filters all dimensions EXCEPT year (so 2024/2025 show even when Year filter = 2026 only)
 function passFilterExceptYear(r){
   for(const d of DIMS){ if(d.key==='year') continue; if(!SEL[d.key].has(colVal(r,d))) return false; }
@@ -720,7 +726,7 @@ function _proHas(raw){ var c=_proCur(raw); return !!(c&&c.accts); }
 // ======== PGI / REMAIN / OPEN sub-cards inside 2026 KPI ========
 function renderPgiSubCards(isVal,lb){
   if(!_proHas(RAW.pgi)&&!_proHas(RAW.remain)&&!_proHas(RAW.open)) return '';
-  var filteredIds=getFilteredIds();
+  var filteredIds=getFilteredIdsNoPeriod(); // PGI/Remain/Open: period-independent snapshot, exclude date filter
   function calcTotal(snap){
     if(!snap||!snap.accts) return {v:0,q:0,cnt:0};
     var tv=0,tq=0,cnt=0;
