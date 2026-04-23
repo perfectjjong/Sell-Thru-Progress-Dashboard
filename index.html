@@ -787,14 +787,14 @@ function renderPgiSubCards(isVal,lb){
   return h;
 }
 
-// ======== OUD KPI (filter-responsive) ========
+// ======== OUD KPI (filter-responsive, period-independent snapshot) ========
 function renderOudKPI(){
   var g=document.getElementById('oudGrid'); g.innerHTML='';
   var oud=RAW.oud;
   if(!oud||!oud.current){ g.style.display='none'; return; }
   g.style.display='';
   var isVal=mode==='value';
-  var filteredIds=getFilteredIds();
+  var filteredIds=getFilteredIdsNoPeriod();
   var curFiltered={v:0,q:0,cnt:0}, prevFiltered={v:0,q:0,cnt:0};
   Object.keys(oud.current.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
@@ -841,9 +841,8 @@ function renderArKPI(){
   var g=document.getElementById('arGrid'); g.innerHTML='';
   if(!AR_SNAP){ g.style.display='none'; return; }
   g.style.display='';
-  // Use filteredIds from sell-thru (reflects ALL filters: team, div, cat, oud, status, period)
-  // Plus AR-only accounts (not in sell-thru) to keep KPI total = Excel total
-  var filteredIds=getFilteredIds();
+  // AR/Collection are snapshots — period-independent, only team/div/cat filter applies
+  var filteredIds=getFilteredIdsNoPeriod();
   var totalBal=0, totalOvd=0, acctCnt=0;
   Object.keys(AR_SNAP.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
@@ -989,7 +988,7 @@ function renderOudTeamChart(){
   var oud=RAW.oud;
   if(!oud||!oud.current){ return; }
   var isVal=mode==='value';
-  var filteredIds=getFilteredIds();
+  var filteredIds=getFilteredIdsNoPeriod();
   var teamData={};
   Object.keys(oud.current.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
@@ -1012,7 +1011,7 @@ function renderOudDeltaChart(){
   var oud=RAW.oud;
   if(!oud||!oud.current||!oud.prev){ return; }
   var isVal=mode==='value';
-  var filteredIds=getFilteredIds();
+  var filteredIds=getFilteredIdsNoPeriod();
   var allTeams=new Set(), curTeam={}, prevTeam={};
   Object.keys(oud.current.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
