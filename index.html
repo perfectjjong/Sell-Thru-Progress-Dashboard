@@ -444,10 +444,13 @@ function passArFilter(numId, filterMode){
 }
 function available(dk){
   const result=new Set(), dTarget=DIMS.find(d=>d.key===dk);
+  var skipPeriod=(dk==='team'||dk==='account');
   RAW.txn.forEach(r=>{
     let ok=true;
-    var dy=r[C.DY];
-    if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) ok=false; }
+    if(!skipPeriod){
+      var dy=r[C.DY];
+      if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) ok=false; }
+    }
     if(!ok) return;
     for(const d of DIMS){
       if(d.key===dk) continue;
