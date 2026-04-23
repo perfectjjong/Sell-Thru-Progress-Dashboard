@@ -681,12 +681,32 @@ function renderKPI(){
       h+=badge('vs 2025',g25)+badge('vs 2024',g24)+badge('vs FCST',achRate,achC);
       h+='</div>';
       h+=renderPgiSubCards(isVal,lb);
-      // RSM FCST total block (Value mode only — linked to bottom table RSM FCST total)
+      // RSM FCST block with team breakdown (Value mode only)
       if(isVal){
         h+='<div style="margin-top:8px;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #3b82f6;">';
-        h+='<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.5px;margin-bottom:3px;">RSM FCST</div>';
-        h+='<div style="font-size:18px;font-weight:700;color:#60a5fa;">'+(rsmTotal?fmt(rsmTotal):'\u2014')+'</div>';
-        if(rsmTotal) h+='<div style="font-size:10px;color:#475569;">'+fmtF(rsmTotal)+' SAR</div>';
+        h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+        h+='<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.5px;">RSM FCST</div>';
+        h+='<div style="font-size:16px;font-weight:700;color:#60a5fa;">'+(rsmTotal?fmt(rsmTotal):'\u2014')+'</div>';
+        h+='</div>';
+        if(rsmTotal) h+='<div style="font-size:10px;color:#475569;margin-bottom:6px;">'+fmtF(rsmTotal)+' SAR</div>';
+        var tmOrder=['OR','OR_Others','IR','IR_Others','Showrooms','SME'];
+        var btm=_tblRsmByTeam;
+        var tmKeys=Object.keys(btm).sort(function(a,b){var ia=tmOrder.indexOf(a),ib=tmOrder.indexOf(b);ia=ia<0?99:ia;ib=ib<0?99:ib;return ia-ib;});
+        if(tmKeys.length>1){
+          var tmColors={'OR':'#10b981','OR_Others':'#6ee7b7','IR':'#f59e0b','IR_Others':'#fbbf24','Showrooms':'#a78bfa','SME':'#f472b6'};
+          h+='<div style="display:flex;flex-wrap:wrap;gap:3px;">';
+          tmKeys.forEach(function(tm){
+            var tv=btm[tm]||0;
+            var pct=rsmTotal?(tv/rsmTotal*100):0;
+            var tc=tmColors[tm]||'#94a3b8';
+            h+='<div style="flex:1;min-width:70px;padding:3px 5px;background:#1e293b;border-radius:4px;border-left:2px solid '+tc+';">';
+            h+='<div style="font-size:8px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+tm+'</div>';
+            h+='<div style="font-size:11px;font-weight:600;color:'+tc+';">'+fmt(tv)+'</div>';
+            h+='<div style="font-size:8px;color:#64748b;">'+pct.toFixed(1)+'%</div>';
+            h+='</div>';
+          });
+          h+='</div>';
+        }
         h+='</div>';
       }
     }
@@ -1024,6 +1044,7 @@ function renderOudDeltaChart(){
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
 var _tblData=[];
 var _tblRsmTotal=0;
+var _tblRsmByTeam={};
 var _sortCol=null, _sortAsc=false;
 var _arMode='all'; // 'all' | 'sell' | 'ar'
 
@@ -1394,8 +1415,11 @@ function buildTable(arr){
   h+='</tbody>';
   // Build tfoot totals from arr
   var tot={rsm:0,v24:0,v25:0,v26:0,pgi:0,rem:0,opn:0,oud:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0};
+  var rsmByTm={};
   arr.forEach(function(a){
-    tot.rsm+=_rsmGet(a.id)||0;
+    var rv=_rsmGet(a.id)||0;
+    tot.rsm+=rv;
+    if(rv>0){var t=a.tm||'Unknown';rsmByTm[t]=(rsmByTm[t]||0)+rv;}
     tot.v24+=(isVal?a.v24:a.q24)||0; tot.v25+=(isVal?a.v25:a.q25)||0; tot.v26+=(isVal?a.v26:a.q26)||0;
     if(hasPgi) tot.pgi+=(isVal?a.pgi_v:a.pgi_q)||0;
     if(hasRemain) tot.rem+=(isVal?a.rem_v:a.rem_q)||0;
@@ -1405,6 +1429,7 @@ function buildTable(arr){
     if(hasCol){tot.col_mtd+=a.col_mtd||0;tot.col_ytd+=a.col_ytd||0;}
   });
   _tblRsmTotal=tot.rsm;
+  _tblRsmByTeam=rsmByTm;
   var tfS='font-weight:700;background:#0f172a;border-top:2px solid #334155;padding:4px 6px;';
   var tfN='class="num" style="'+tfS;
   h+='<tfoot><tr>';
