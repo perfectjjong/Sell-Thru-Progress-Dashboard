@@ -96,6 +96,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f
 .ar-card.c-col .ar-label{color:#34d399}
 .ar-card.c-col .ar-val{color:#10b981}
 
+/* ===== DSO KPI ===== */
+.dso-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
+.dso-card{background:#1e293b;border-radius:10px;padding:14px 16px;border:1px solid #134e4a}
+.dso-card .dso-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#2dd4bf}
+.dso-card .dso-val{font-size:22px;font-weight:700;color:#14b8a6;margin:4px 0 2px}
+.dso-card .dso-sub{font-size:11px;color:#64748b}
+.col-group.g-dso{background:#042f2e;color:#2dd4bf}
+
 /* ===== Status ===== */
 .status-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
 .status-card{background:#1e293b;border-radius:7px;padding:12px;text-align:center;border:1px solid #334155}
@@ -166,6 +174,8 @@ tfoot .fz{background:#0f172a}
 <div class="oud-grid" id="oudGrid"></div>
 <!-- AR KPI -->
 <div class="ar-grid" id="arGrid"></div>
+<!-- DSO KPI -->
+<div class="dso-grid" id="dsoGrid"></div>
 <!-- Status -->
 <div class="status-grid" id="statusGrid"></div>
 
@@ -641,6 +651,17 @@ function switchMode(m){
 function fmt(n){if(n==null)return'-';if(Math.abs(n)>=1e6)return(n/1e6).toFixed(1)+'M';if(Math.abs(n)>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();}
 function fmtF(n){return n?Math.round(n).toLocaleString('en-US'):'0';}
 function gv(r){return mode==='value'?r[C.VL]:r[C.QT];}
+function calcDaysYtd(){
+  var sd=RAW?RAW.sell_thru_date||'05-02':'05-02';
+  var p=sd.split('-');
+  var d=new Date(2026,parseInt(p[0])-1,parseInt(p[1]));
+  return Math.round((d-new Date(2026,0,1))/86400000)+1;
+}
+function calcAgedDso(bal,ovd,o1,o2,o3){
+  if(!bal||bal<=0) return null;
+  var nd=Math.max(0,bal-ovd);
+  return (nd*15+(o1||0)*15+(o2||0)*45+(o3||0)*90)/bal;
+}
 const CY={'2024':'#f59e0b','2025':'#3b82f6','2026':'#10b981'};
 const CS={'Active':'#3b82f6','New_2025':'#10b981','Re-active_2025':'#8b5cf6','Need to re-active':'#ef4444','New':'#06b6d4','Re-active from 2024':'#f97316'};
 
@@ -906,6 +927,34 @@ function renderArKPI(){
 
   var hdrAr=document.getElementById('hdrArDate');
   if(hdrAr) hdrAr.textContent=AR_SNAP.date||'-';
+}
+
+// ======== DSO KPI ========
+function renderDsoKPI(){
+  var g=document.getElementById('dsoGrid'); g.innerHTML='';
+  if(!AR_SNAP){g.style.display='none';return;}
+  g.style.display='';
+  var filteredIds=getFilteredIdsNoPeriod();
+  var tBal=0,tOvd=0,tO1=0,tO2=0,tO3=0,tRev=0;
+  Object.keys(AR_SNAP.accts).forEach(function(id){
+    var nid=isNaN(+id)?id:+id;
+    var inST=!!ACCT_TEAM[nid];
+    if(inST&&!filteredIds.has(nid)) return;
+    if(!inST&&!SEL.div.has('Others')) return;
+    var a=AR_SNAP.accts[id];
+    tBal+=a.bal||0; tOvd+=a.ovd||0; tO1+=a.o1||0; tO2+=a.o2||0; tO3+=a.o3||0;
+  });
+  RAW.txn.forEach(function(r){
+    if(r[C.Y]!==2026) return;
+    if(!passFilterNoPeriod(r)) return;
+    tRev+=r[C.VL];
+  });
+  var days=calcDaysYtd();
+  var sDso=(tBal>0&&tRev>0)?(tBal/tRev*days):null;
+  var aDso=calcAgedDso(tBal,tOvd,tO1,tO2,tO3);
+  var fd=function(v){return v!=null?v.toFixed(1)+'d':'N/A';};
+  g.innerHTML='<div class="dso-card"><div class="dso-label">DSO — Simple ('+AR_SNAP.date+')</div><div class="dso-val">'+fd(sDso)+'</div><div class="dso-sub">AR '+fmt(tBal)+' \xF7 YTD Rev '+fmt(tRev)+' \xD7 '+days+'d</div></div>'
+             +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">Not Due\xD715 + OVD0-30\xD715 + OVD30-60\xD745 + OVD60+\xD790 (days)</div></div>';
 }
 
 // ======== STATUS CARDS ========
@@ -1242,6 +1291,20 @@ function renderTopTable(){
              ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
   });}
   _tblData=Object.values(am);
+  // Pre-compute YTD 2026 revenue per account (period-independent, for DSO)
+  var _v26YtdMap={};
+  RAW.txn.forEach(function(r){
+    if(r[C.Y]!==2026) return;
+    if(!passFilterNoPeriod(r)) return;
+    _v26YtdMap[r[C.ID]]=(_v26YtdMap[r[C.ID]]||0)+r[C.VL];
+  });
+  var _dDays=calcDaysYtd();
+  Object.keys(am).forEach(function(nid){
+    var a=am[nid];
+    a.v26_ytd=_v26YtdMap[+nid]||_v26YtdMap[nid]||0;
+    a.dso_simple=(a.ar_bal>0&&a.v26_ytd>0)?(a.ar_bal/a.v26_ytd*_dDays):null;
+    a.dso_aged=(a.ar_bal>0)?calcAgedDso(a.ar_bal,a.ar_ovd,a.ar_o1,a.ar_o2,a.ar_o3):null;
+  });
   // Update AR Only count
   var arOnlyCntEl=document.getElementById('arOnlyCount');
   var arOnlyTotal=_tblData.filter(function(a){return a.tm==='AR Only';}).length;
@@ -1302,6 +1365,10 @@ function getSortCols(){
     cols.push({key:'col_mtd',label:'Col MTD',get:function(a){return a.col_mtd;},type:'num',grp:'col'});
     cols.push({key:'col_ytd',label:'Col YTD',get:function(a){return a.col_ytd;},type:'num',grp:'col'});
   }
+  if(hasAr){
+    cols.push({key:'dso_simple',label:'DSO',get:function(a){return a.dso_simple!=null?a.dso_simple:999999;},type:'num',grp:'dso'});
+    cols.push({key:'dso_aged',label:'DSO Aged',get:function(a){return a.dso_aged!=null?a.dso_aged:999999;},type:'num',grp:'dso'});
+  }
   cols.push({key:'rsm_fcst',label:'RSM FCST',get:function(a){return _rsmGet(a.id);},type:'num',grp:'rsm'});
   return cols;
 }
@@ -1348,6 +1415,7 @@ function buildTable(arr){
   if(hasOud) h+='<th colspan="2" class="col-group g-oud">OUD</th>';
   if(hasAr) h+='<th colspan="5" class="col-group g-ar">AR / OVERDUE (SAR)</th>';
   if(hasCol) h+='<th colspan="2" class="col-group g-col">COLLECTION (SAR)</th>';
+  if(hasAr) h+='<th colspan="2" class="col-group g-dso">DSO (days)</th>';
   h+='</tr><tr>';
   // Sell-thru sub-headers
   ['v24','v25','v26'].forEach(function(k){
@@ -1383,6 +1451,10 @@ function buildTable(arr){
       h+='<th class="num" style="'+thStyle+'color:#34d399;" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
     });
   }
+  if(hasAr){
+    h+='<th class="num" style="'+thStyle+'color:#2dd4bf;" onclick="sortTable(\'dso_simple\')">Simple'+arrow('dso_simple')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#2dd4bf;" onclick="sortTable(\'dso_aged\')">Aged'+arrow('dso_aged')+'</th>';
+  }
   h+='</tr></thead><tbody>';
   arr.forEach(function(a,i){
     var v24=isVal?a.v24:a.q24, v25=isVal?a.v25:a.q25, v26=isVal?a.v26:a.q26;
@@ -1412,11 +1484,15 @@ function buildTable(arr){
       h+='<td class="num" data-col="col_mtd" data-val="'+(a.col_mtd||0)+'" style="color:#10b981">'+(a.col_mtd?fmtF(a.col_mtd):'-')+'</td>';
       h+='<td class="num" data-col="col_ytd" data-val="'+(a.col_ytd||0)+'" style="color:#8b5cf6">'+(a.col_ytd?fmtF(a.col_ytd):'-')+'</td>';
     }
+    if(hasAr){
+      h+='<td class="num" style="color:#14b8a6">'+(a.dso_simple!=null?a.dso_simple.toFixed(1):'-')+'</td>';
+      h+='<td class="num" style="color:#2dd4bf">'+(a.dso_aged!=null?a.dso_aged.toFixed(1):'-')+'</td>';
+    }
     h+='</tr>';
   });
   h+='</tbody>';
   // Build tfoot totals from arr
-  var tot={rsm:0,v24:0,v25:0,v26:0,pgi:0,rem:0,opn:0,oud:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0};
+  var tot={rsm:0,v24:0,v25:0,v26:0,pgi:0,rem:0,opn:0,oud:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,v26_ytd:0};
   var rsmByTm={};
   arr.forEach(function(a){
     var rv=_rsmGet(a.id)||0;
@@ -1427,7 +1503,7 @@ function buildTable(arr){
     if(hasRemain) tot.rem+=(isVal?a.rem_v:a.rem_q)||0;
     if(hasOpen) tot.opn+=(isVal?a.opn_v:a.opn_q)||0;
     if(hasOud) tot.oud+=(isVal?a.oud_v:a.oud_q)||0;
-    if(hasAr){tot.ar_bal+=a.ar_bal||0;tot.ar_ovd+=a.ar_ovd||0;tot.ar_o1+=a.ar_o1||0;tot.ar_o2+=a.ar_o2||0;tot.ar_o3+=a.ar_o3||0;}
+    if(hasAr){tot.ar_bal+=a.ar_bal||0;tot.ar_ovd+=a.ar_ovd||0;tot.ar_o1+=a.ar_o1||0;tot.ar_o2+=a.ar_o2||0;tot.ar_o3+=a.ar_o3||0;tot.v26_ytd+=a.v26_ytd||0;}
     if(hasCol){tot.col_mtd+=a.col_mtd||0;tot.col_ytd+=a.col_ytd||0;}
   });
   _tblRsmTotal=tot.rsm;
@@ -1454,6 +1530,12 @@ function buildTable(arr){
   if(hasCol){
     h+='<td '+tfN+'color:#10b981;" data-col="col_mtd">'+fmtF(tot.col_mtd)+'</td>';
     h+='<td '+tfN+'color:#8b5cf6;" data-col="col_ytd">'+fmtF(tot.col_ytd)+'</td>';
+  }
+  if(hasAr){
+    var _ftSD=(tot.ar_bal>0&&tot.v26_ytd>0)?(tot.ar_bal/tot.v26_ytd*calcDaysYtd()):null;
+    var _ftAD=calcAgedDso(tot.ar_bal,tot.ar_ovd,tot.ar_o1,tot.ar_o2,tot.ar_o3);
+    h+='<td class="num" style="'+tfS+'color:#14b8a6;">'+(_ftSD!=null?_ftSD.toFixed(1):'-')+'</td>';
+    h+='<td class="num" style="'+tfS+'color:#2dd4bf;">'+(_ftAD!=null?_ftAD.toFixed(1):'-')+'</td>';
   }
   h+='</tr></tfoot>';
   document.getElementById('topTable').innerHTML=h;
@@ -1497,7 +1579,7 @@ function exportExcel(){
   if(hasRemain){ header.push('Remaining_'+label); if(hasRemPrev) header.push('Remain_Delta'); }
   if(hasOpen){ header.push('Open_'+label); if(hasOpnPrev) header.push('Open_Delta'); }
   if(hasOud){ header.push('OUD_'+label,'OUD_Delta_'+label); }
-  if(hasAr){ header.push('AR_Balance','AR_Overdue','OVD_0-30','OVD_30-60','OVD_60+'); }
+  if(hasAr){ header.push('AR_Balance','AR_Overdue','OVD_0-30','OVD_30-60','OVD_60+','DSO_Simple','DSO_Aged'); }
   if(hasCol){ header.push('Col_MTD','Col_YTD'); }
   var sq=document.getElementById('tblSearch'), q=(sq?sq.value:'').toLowerCase();
   var filtered=q?_tblData.filter(function(a){return(a.nm||'').toLowerCase().includes(q);}):_tblData;
@@ -1510,7 +1592,7 @@ function exportExcel(){
     if(hasRemain){ row.push(Math.round(isVal?a.rem_v:a.rem_q)); if(hasRemPrev) row.push(Math.round(isVal?a.rem_dv:a.rem_dq)); }
     if(hasOpen){ row.push(Math.round(isVal?a.opn_v:a.opn_q)); if(hasOpnPrev) row.push(Math.round(isVal?a.opn_dv:a.opn_dq)); }
     if(hasOud){ row.push(Math.round(isVal?a.oud_v:a.oud_q),Math.round(isVal?a.oud_dv:a.oud_dq)); }
-    if(hasAr){ row.push(Math.round(a.ar_bal),Math.round(a.ar_ovd),Math.round(a.ar_o1),Math.round(a.ar_o2),Math.round(a.ar_o3)); }
+    if(hasAr){ row.push(Math.round(a.ar_bal),Math.round(a.ar_ovd),Math.round(a.ar_o1),Math.round(a.ar_o2),Math.round(a.ar_o3)); row.push(a.dso_simple!=null?a.dso_simple.toFixed(1):'',a.dso_aged!=null?a.dso_aged.toFixed(1):''); }
     if(hasCol){ row.push(Math.round(a.col_mtd),Math.round(a.col_ytd)); }
     csv+=row.join(',')+'\n';
   });
@@ -1570,7 +1652,7 @@ function renderAll(){
     });
   }
   renderTopTable();
-  renderKPI(); renderOudKPI(); renderArKPI(); renderStatus();
+  renderKPI(); renderOudKPI(); renderArKPI(); renderDsoKPI(); renderStatus();
   renderMonthly(); renderTeam(); renderCat(); renderStatusChart(); renderGrowth();
   renderOudTeamChart(); renderOudDeltaChart();
 }
