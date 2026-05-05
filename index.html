@@ -2211,10 +2211,10 @@ function renderFHChart(accts){
     var l=xa.left,r2=xa.right,t=ya.top,b=ya.bottom;
     ctx2.save();
     // X reverse:true → 픽셀 LEFT = DATA 높음(HIGH DSO=나쁨), 픽셀 RIGHT = DATA 낮음(LOW DSO=좋음)
-    ctx2.fillStyle='rgba(251,146,60,0.15)';  ctx2.fillRect(l,t,x0-l,y0-t);    // 좌상: HIGH DSO + LOW OVD → Anomaly
-    ctx2.fillStyle='rgba(239,68,68,0.20)';   ctx2.fillRect(l,y0,x0-l,b-y0);   // 좌하: HIGH DSO + HIGH OVD → Critical
-    ctx2.fillStyle='rgba(16,185,129,0.15)';  ctx2.fillRect(x0,t,r2-x0,y0-t);  // 우상: LOW DSO + LOW OVD → Safe
-    ctx2.fillStyle='rgba(251,191,36,0.15)';  ctx2.fillRect(x0,y0,r2-x0,b-y0); // 우하: LOW DSO + HIGH OVD → Watch
+    ctx2.fillStyle='rgba(253,186,116,0.30)';  ctx2.fillRect(l,t,x0-l,y0-t);    // 좌상: 2분면 Anomaly — 파스텔 오렌지
+    ctx2.fillStyle='rgba(252,165,165,0.30)';  ctx2.fillRect(l,y0,x0-l,b-y0);   // 좌하: 3분면 Critical — 파스텔 레드
+    ctx2.fillStyle='rgba(134,239,172,0.30)';  ctx2.fillRect(x0,t,r2-x0,y0-t);  // 우상: 1분면 Safe — 파스텔 연두
+    ctx2.fillStyle='rgba(253,224,71,0.30)';   ctx2.fillRect(x0,y0,r2-x0,b-y0); // 우하: 4분면 Watch — 파스텔 노랑
     // 기준선
     ctx2.setLineDash([4,3]); ctx2.lineWidth=1.5;
     ctx2.strokeStyle='rgba(148,163,184,0.7)';
