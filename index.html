@@ -2409,18 +2409,29 @@ function fhShowTrend(accountId, accountName){
       ovds.push(Math.round(ovd/1000));
     });
 
-    // ar.current가 히스토리 마지막보다 최신이면 current 포인트 추가 (불일치 방지)
+    // ar.current를 항상 마지막 포인트로 반영 (data.json이 ar_history보다 최신 권위)
     var curSnap=RAW&&RAW.ar&&RAW.ar.current;
     var curDate=curSnap?curSnap.date:'';
     var lastHistDate=snaps.length?snaps[snaps.length-1].date:'';
-    if(curSnap&&curDate&&curDate!==lastHistDate){
+    if(curSnap&&curDate){
       var ca=curSnap.accts&&curSnap.accts[accountId];
       if(ca){
-        var bal=ca.bal||0, ovd=ca.ovd||0;
-        dates.push(curDate.substring(5)+'★');
-        ovdRates.push(bal>0?parseFloat((ovd/bal*100).toFixed(1)):0);
-        bals.push(Math.round(bal/1000));
-        ovds.push(Math.round(ovd/1000));
+        var cbal=ca.bal||0, covd=ca.ovd||0;
+        var cLabel=curDate.substring(5)+'★';
+        var cOvdR=cbal>0?parseFloat((covd/cbal*100).toFixed(1)):0;
+        var cBalK=Math.round(cbal/1000), cOvdK=Math.round(covd/1000);
+        if(curDate===lastHistDate){
+          // 같은 날짜면 마지막 스냅샷을 current로 교체 (당일 재생성 반영)
+          dates[dates.length-1]=cLabel;
+          ovdRates[ovdRates.length-1]=cOvdR;
+          bals[bals.length-1]=cBalK;
+          ovds[ovds.length-1]=cOvdK;
+        } else if(curDate>lastHistDate){
+          dates.push(cLabel);
+          ovdRates.push(cOvdR);
+          bals.push(cBalK);
+          ovds.push(cOvdK);
+        }
       }
     }
 
