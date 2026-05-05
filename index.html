@@ -2061,7 +2061,8 @@ function fhGetAccounts(){
     var x_a=dso_a;
     var bal=a.bal||0, ovd=a.ovd||0;
     var ovd_rate=bal>0?(ovd/bal*100):0;
-    var no_rev=(cache&&cache.v26<=0&&bal>0);
+    var revForMode=cache?(_fhRevMode==='t12m'?cache.t12m:cache.v26):0;
+    var no_rev=(cache&&revForMode<=0&&bal>0);
     accts.push({
       id:sid, name:a.nm||NAME_MAP[sid]||sid, cls:cls, pt:pt,
       cl:a.cl||0, bal:bal, ovd:ovd, ovd_rate:ovd_rate,
@@ -2261,7 +2262,7 @@ function renderFHChart(accts){
           var dso=_fhDsoMode==='simple'?a.dso_simple:a.dso_aged;
           var avg=_fhDsoMode==='simple'?a.dso_avg_s:a.dso_avg_a;
           return [a.name+' ('+a.cls+')'+(a.no_rev?' ⚠ No Revenue':''),
-            a.no_rev?'DSO: N/A (2026 매출 없음/마이너스) → Critical 강제배치'
+            a.no_rev?'DSO: N/A ('+(_fhRevMode==='t12m'?'T12M':'2026')+' 매출 없음/마이너스) → Critical 강제배치'
               :'DSO: '+(dso!=null?dso.toFixed(1):'?')+'d  |  선택등급 평균: '+selAvgDso.toFixed(1)+'d  '+(dso!=null&&dso<=selAvgDso?'✅평균이하':'⬆평균초과'),
             'Overdue Rate: '+a.ovd_rate.toFixed(1)+'%  '+(a.ovd_rate<=20?'✅':'🔴 >20%'),
             'AR Balance: SAR '+(a.bal/1000).toFixed(0)+'K',
@@ -2269,7 +2270,7 @@ function renderFHChart(accts){
         }}}
       },
       scales:{
-        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple':'Aged')+' (days)  |  기준선: 선택 등급 평균  ←높음  낮음→',color:'#64748b',font:{size:11}},
+        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  기준선: 선택 등급 평균  ←높음  낮음→',color:'#64748b',font:{size:11}},
           ticks:{color:'#64748b',callback:function(v){return v.toFixed(0)+'d';}},
           grid:{color:'#1e293b'},border:{color:'#475569'}},
         y:{title:{display:true,text:'← Overdue Rate 높음  |  낮음 → (기준선 20%)',color:'#64748b',font:{size:11}},
