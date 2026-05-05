@@ -259,6 +259,10 @@ tfoot .fz{background:#0f172a}
   </div>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
     <div style="display:flex;gap:0;">
+      <button id="fhRevYtdBtn" onclick="fhSetRevMode('ytd')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">YTD</button>
+      <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
+    </div>
+    <div style="display:flex;gap:0;">
       <button id="fhDsoSimpleBtn" onclick="fhSetDsoMode('simple')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">DSO Simple</button>
       <button id="fhDsoAgedBtn" onclick="fhSetDsoMode('aged')" style="padding:5px 14px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">DSO Aged</button>
     </div>
@@ -1910,6 +1914,7 @@ function switchMainTab(tab){
 
 // ======== B2C FINANCIAL HEALTH ========
 var _fhDsoMode='simple';
+var _fhRevMode='ytd';
 var _fhSelGrades=new Set(['A+']);
 var _fhSelAccount=null;
 var _fhSelDate='latest'; // 'latest' or 'YYYY-MM-DD'
@@ -1947,6 +1952,17 @@ function fhSetDsoMode(mode){
   document.getElementById('fhDsoSimpleBtn').style.border=mode==='simple'?'none':'1px solid #334155';
   document.getElementById('fhDsoAgedBtn').style.background=mode==='aged'?'#3b82f6':'#1e293b';
   document.getElementById('fhDsoAgedBtn').style.color=mode==='aged'?'#fff':'#64748b';
+  renderFH();
+}
+
+function fhSetRevMode(mode){
+  _fhRevMode=mode;
+  document.getElementById('fhRevYtdBtn').style.background=mode==='ytd'?'#3b82f6':'#1e293b';
+  document.getElementById('fhRevYtdBtn').style.color=mode==='ytd'?'#fff':'#64748b';
+  document.getElementById('fhRevYtdBtn').style.border=mode==='ytd'?'none':'1px solid #334155';
+  document.getElementById('fhRevT12mBtn').style.background=mode==='t12m'?'#3b82f6':'#1e293b';
+  document.getElementById('fhRevT12mBtn').style.color=mode==='t12m'?'#fff':'#64748b';
+  _buildFhAmCache();
   renderFH();
 }
 
@@ -2087,21 +2103,24 @@ function _buildFhAmCache(){
   if(!RAW) return;
   window._fhAmCache={};
   var ar=fhGetArData();
-  // FH는 독립 탭 — Year 등 Sell-Thru 필터 영향 없이 계정별 실제 2026 전체 매출 사용
   var _dDays=calcDaysYtd();
-  var v26Map={};
+  var v26Map={}, t12mMap={};
   RAW.txn.forEach(function(t){
-    if(t[C.Y]!==2026) return;
     var sid=String(int_id(t[C.ID]));
-    v26Map[sid]=(v26Map[sid]||0)+(t[C.VL]||0);
+    if(t[C.Y]===2026) v26Map[sid]=(v26Map[sid]||0)+(t[C.VL]||0);
+    // T12M: 2025-05 ~ 2026-04
+    if((t[C.Y]===2025&&t[C.M]>='05')||(t[C.Y]===2026&&t[C.M]<='04'))
+      t12mMap[sid]=(t12mMap[sid]||0)+(t[C.VL]||0);
   });
   Object.keys(ar).forEach(function(sid){
     var a=ar[sid];
-    var v26=v26Map[sid]||0;
+    var v26=v26Map[sid]||0, t12m=t12mMap[sid]||0;
     var bal=a.bal||0, ovd=a.ovd||0, o1=a.o1||0, o2=a.o2||0, o3=a.o3||0;
-    var dso_s=(bal>0&&v26>0)?(bal/v26*_dDays):null;
+    var dso_ytd=(bal>0&&v26>0)?(bal/v26*_dDays):null;
+    var dso_t12m=(bal>0&&t12m>0)?(bal/t12m*365):null;
+    var dso_s=_fhRevMode==='t12m'?dso_t12m:dso_ytd;
     var dso_a=bal>0?calcAgedDso(bal,ovd,o1,o2,o3):null;
-    window._fhAmCache[sid]={dso_simple:dso_s, dso_aged:dso_a, v26:v26};
+    window._fhAmCache[sid]={dso_simple:dso_s, dso_aged:dso_a, v26:v26, t12m:t12m};
   });
 }
 
@@ -2111,10 +2130,9 @@ function renderFHKpi(accts){
     totCl+=a.cl; totBal+=a.bal; totOvd+=a.ovd;
     // 집계 방식: Sell-Thru KPI와 동일 (Total AR / Total YTD Rev * days)
     var cache=window._fhAmCache&&window._fhAmCache[a.id];
-    totRev+=cache?cache.v26||0:0;
+    totRev+=cache?(_fhRevMode==='t12m'?cache.t12m||0:cache.v26||0):0;
   });
-  // Sell-Thru KPI와 동일한 집계 DSO
-  var _dDays=calcDaysYtd();
+  var _dDays=_fhRevMode==='t12m'?365:calcDaysYtd();
   var avgDso=(_fhDsoMode==='simple')
     ?(totBal>0&&totRev>0?totBal/totRev*_dDays:0)
     :(function(){var s=0,c=0;accts.forEach(function(a){var d=a.dso_aged;if(d!=null){s+=d;c++;}});return c?s/c:0;})();
@@ -2127,7 +2145,7 @@ function renderFHKpi(accts){
     {label:'Total AR Balance',val:'SAR '+fmt2(totBal),color:'#60a5fa'},
     {label:'Total Overdue',val:'SAR '+fmt2(totOvd),color:'#f87171'},
     {label:'Overdue %',val:ovdPct.toFixed(1)+'%',color:'#fb923c'},
-    {label:'Avg DSO ('+ (_fhDsoMode==='simple'?'Simple':'Aged')+')',val:avgDso.toFixed(1)+' days',color:'#2dd4bf'},
+    {label:'Avg DSO ('+ (_fhDsoMode==='simple'?('Simple '+(_fhRevMode==='t12m'?'T12M':'YTD')):'Aged')+')',val:avgDso.toFixed(1)+' days',color:'#2dd4bf'},
     {label:'Data Date',val:dateLabel,color:'#64748b'},
   ];
   var g=document.getElementById('fhKpiStrip');
@@ -2357,6 +2375,7 @@ function fhReset(){
   _fhSelGrades=new Set(['A+']);
   _fhSelAccount=null;
   _fhDsoMode='simple';
+  _fhRevMode='ytd';
   _fhSelDate='latest';
   var sel=document.getElementById('fhDateSelect');
   if(sel) sel.value='latest';
