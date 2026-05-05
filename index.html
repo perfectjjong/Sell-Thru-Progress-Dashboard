@@ -2171,7 +2171,8 @@ function renderFHChart(accts){
   // no_rev 계정 X값: 정상 계정 최대 DSO + 30% (차트 우측 끝 Critical 영역)
   var dsoVals=normalPts.map(function(a){return a[xKey];});
   var maxNormalDso=dsoVals.length?Math.max.apply(null,dsoVals):300;
-  var noRevX=(maxNormalDso>0?maxNormalDso:300)*1.3+50;
+  // DPO 180d 기준선보다 반드시 오른쪽(높은 값)에 위치해야 Critical 구역에 찍힘
+  var noRevX=(Math.max(maxNormalDso,180))*1.3+50;
   noRevPts.forEach(function(a){ a._chartX=noRevX; });
 
   var pts=normalPts.concat(noRevPts);
@@ -2303,7 +2304,6 @@ function renderFHTable(accts){
     +'<th style="'+thS+'">vs DPO 180d</th>'
     +'<th style="'+thS+'">Quadrant</th>'
     +'</tr></thead><tbody>';
-  var tblAvgDso=180; // X 기준선: DPO 180d 고정
   // Y 기준선: 테이블 계정 평균 OVD Rate
   var tblOvdVals=accts.filter(function(a){return a.bal>0;}).map(function(a){return a.ovd_rate;});
   var tblAvgOvd=tblOvdVals.length?tblOvdVals.reduce(function(a,b){return a+b;},0)/tblOvdVals.length:20;
