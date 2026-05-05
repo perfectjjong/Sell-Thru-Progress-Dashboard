@@ -2034,14 +2034,15 @@ function fhGetAccounts(){
   (RAW.txn||[]).forEach(function(t){ txnIds.add(String(int_id(t[C.ID]))); });
   var ar=fhGetArData();
 
-  // 1단계: 전체 등급별 평균 DSO 계산 (선택 등급 무관하게 전체 기준)
+  // 1단계: 전체 등급별 평균 (DSO - Credit Term) 계산
   var gradeDsoS={}, gradeDsoA={};
   Object.keys(ar).forEach(function(sid){
     var cls=CLS_MAP2[sid]||'Unclassified';
     var cache=window._fhAmCache&&window._fhAmCache[sid];
+    var pt=PT_MAP[sid]||90;
     if(!cache) return;
-    if(cache.dso_simple!=null){ if(!gradeDsoS[cls]) gradeDsoS[cls]=[]; gradeDsoS[cls].push(cache.dso_simple); }
-    if(cache.dso_aged!=null){   if(!gradeDsoA[cls]) gradeDsoA[cls]=[]; gradeDsoA[cls].push(cache.dso_aged); }
+    if(cache.dso_simple!=null){ if(!gradeDsoS[cls]) gradeDsoS[cls]=[]; gradeDsoS[cls].push(cache.dso_simple-pt); }
+    if(cache.dso_aged!=null){   if(!gradeDsoA[cls]) gradeDsoA[cls]=[]; gradeDsoA[cls].push(cache.dso_aged-pt); }
   });
   var avgDsoS={}, avgDsoA={};
   Object.keys(gradeDsoS).forEach(function(g){ avgDsoS[g]=gradeDsoS[g].reduce(function(a,b){return a+b;},0)/gradeDsoS[g].length; });
@@ -2058,8 +2059,8 @@ function fhGetAccounts(){
     var cache=window._fhAmCache&&window._fhAmCache[sid];
     var dso_s=cache?cache.dso_simple:null;
     var dso_a=cache?cache.dso_aged:null;
-    var x_s=dso_s;
-    var x_a=dso_a;
+    var x_s=dso_s!=null?dso_s-pt:null;
+    var x_a=dso_a!=null?dso_a-pt:null;
     var bal=a.bal||0, ovd=a.ovd||0;
     var ovd_rate=bal>0?(ovd/bal*100):0;
     var revForMode=cache?(_fhRevMode==='t12m'?cache.t12m:cache.v26):0;
