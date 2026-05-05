@@ -2027,12 +2027,13 @@ function fhGetAccounts(){
     var mid=String(int_id(m.id));
     CLS_MAP2[mid]=m.classification||'Unclassified';
     NAME_MAP[mid]=m.name||'';
-    if(m.pt) PT_MAP[mid]=m.pt;
   });
   // Sell-Thru KPI와 동일: txn에 거래 기록 있는 계정만 포함
   var txnIds=new Set();
   (RAW.txn||[]).forEach(function(t){ txnIds.add(String(int_id(t[C.ID]))); });
   var ar=fhGetArData();
+  // Credit Term: ar.current.accts[id].cd (SAP ZTERM 기반, 없으면 90일 default)
+  Object.keys(ar).forEach(function(sid){ if(ar[sid].cd) PT_MAP[sid]=ar[sid].cd; });
 
   // 1단계: 전체 등급별 평균 (DSO - Credit Term) 계산
   var gradeDsoS={}, gradeDsoA={};
