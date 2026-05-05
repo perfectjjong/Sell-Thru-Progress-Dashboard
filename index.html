@@ -2209,11 +2209,11 @@ function renderFHChart(accts){
     var x0=xa.getPixelForValue(selAvgDso), y0=ya.getPixelForValue(-20);
     var l=xa.left,r2=xa.right,t=ya.top,b=ya.bottom;
     ctx2.save();
-    // X reverse이므로: 기준선 왼쪽=DSO 낮음(좋음)=Safe/Anomaly, 오른쪽=DSO 높음=Watch/Critical
-    ctx2.fillStyle='rgba(16,185,129,0.15)';  ctx2.fillRect(l,t,x0-l,y0-t);    // 좌상: Safe
-    ctx2.fillStyle='rgba(251,191,36,0.15)';  ctx2.fillRect(l,y0,x0-l,b-y0);   // 좌하: Watch
-    ctx2.fillStyle='rgba(251,146,60,0.15)';  ctx2.fillRect(x0,t,r2-x0,y0-t);  // 우상: Anomaly
-    ctx2.fillStyle='rgba(239,68,68,0.20)';   ctx2.fillRect(x0,y0,r2-x0,b-y0); // 우하: Critical
+    // X reverse:true → 픽셀 LEFT = DATA 높음(HIGH DSO=나쁨), 픽셀 RIGHT = DATA 낮음(LOW DSO=좋음)
+    ctx2.fillStyle='rgba(251,146,60,0.15)';  ctx2.fillRect(l,t,x0-l,y0-t);    // 좌상: HIGH DSO + LOW OVD → Anomaly
+    ctx2.fillStyle='rgba(239,68,68,0.20)';   ctx2.fillRect(l,y0,x0-l,b-y0);   // 좌하: HIGH DSO + HIGH OVD → Critical
+    ctx2.fillStyle='rgba(16,185,129,0.15)';  ctx2.fillRect(x0,t,r2-x0,y0-t);  // 우상: LOW DSO + LOW OVD → Safe
+    ctx2.fillStyle='rgba(251,191,36,0.15)';  ctx2.fillRect(x0,y0,r2-x0,b-y0); // 우하: LOW DSO + HIGH OVD → Watch
     // 기준선
     ctx2.setLineDash([4,3]); ctx2.lineWidth=1.5;
     ctx2.strokeStyle='rgba(148,163,184,0.7)';
@@ -2226,10 +2226,10 @@ function renderFHChart(accts){
     ctx2.fillText('Avg '+selAvgDso.toFixed(0)+'d',x0+4,t+10);
     ctx2.fillText('20%',l+4,y0-4);
     ctx2.globalAlpha=0.75; ctx2.font='bold 11px sans-serif';
-    ctx2.fillStyle='#10b981'; ctx2.fillText('✅ Safe',l+8,t+16);
-    ctx2.fillStyle='#f59e0b'; ctx2.fillText('⚠ Watch',l+8,b-10);
-    ctx2.fillStyle='#fb923c'; ctx2.fillText('🔶 Anomaly',x0+8,t+16);
-    ctx2.fillStyle='#ef4444'; ctx2.fillText('🔴 Critical',x0+8,b-10);
+    ctx2.fillStyle='#fb923c'; ctx2.fillText('🔶 Anomaly',l+8,t+16);
+    ctx2.fillStyle='#ef4444'; ctx2.fillText('🔴 Critical',l+8,b-10);
+    ctx2.fillStyle='#10b981'; ctx2.fillText('✅ Safe',x0+8,t+16);
+    ctx2.fillStyle='#f59e0b'; ctx2.fillText('⚠ Watch',x0+8,b-10);
     ctx2.restore();
   }};
   _fhChart=new Chart(ctx,{
@@ -2329,7 +2329,7 @@ function renderFHTable(accts){
     var tdSL='padding:5px 8px;text-align:left;color:#e2e8f0;border-bottom:1px solid #1e293b;';
     var clsColor=FH_GRADE_COLORS[a.cls]||'#94a3b8';
     var rateColor=a.ovd_rate>20?'#ef4444':a.ovd_rate>10?'#f59e0b':'#10b981';
-    var xColor=x!=null&&x<tblAvgDso?'#ef4444':'#10b981';
+    var xColor=x!=null&&x>tblAvgDso?'#ef4444':'#10b981';
     var dsoCell=a.no_rev
       ?'<span style="color:#ef4444;font-size:10px;">N/A ⚠</span>'
       :(dso!=null?dso.toFixed(1)+'d':'-');
