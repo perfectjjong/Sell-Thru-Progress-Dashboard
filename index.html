@@ -2108,17 +2108,16 @@ function _buildFhAmCache(){
   var _curY=0;
   RAW.txn.forEach(function(t){ if(t[C.Y]>_curY) _curY=t[C.Y]; });
   if(!_curY) _curY=new Date().getFullYear();
-  // T12M 기간: sell_thru_date 기준 직전 12개월 (매월 자동 슬라이드)
-  var _curM=parseInt((RAW.sell_thru_date||'01-01').substring(0,2));
-  var _t12EndM=_curM>1?_curM-1:12, _t12EndY=_curM>1?_curY:_curY-1;
-  var _t12StM=_t12EndM<12?_t12EndM+1:1, _t12StY=_t12EndM<12?_t12EndY-1:_t12EndY;
-  var _t12St=_t12StY*100+_t12StM, _t12End=_t12EndY*100+_t12EndM;
+  // T12M 기간: sell_thru_date 기준 정확히 365일 전 ~ 오늘 (일 단위 슬라이드)
+  var _sdStr=(RAW.sell_thru_date||'01-01'); // "MM-DD"
+  var _t12EndDate=_curY+'-'+_sdStr;          // "2026-05-05"
+  var _t12StDate=((_curY-1)+'-'+_sdStr);     // "2025-05-05"
   var v26Map={}, t12mMap={};
   RAW.txn.forEach(function(t){
     var sid=String(int_id(t[C.ID]));
     if(t[C.Y]===_curY) v26Map[sid]=(v26Map[sid]||0)+(t[C.VL]||0);
-    var ym=t[C.Y]*100+parseInt(t[C.M]);
-    if(ym>=_t12St&&ym<=_t12End) t12mMap[sid]=(t12mMap[sid]||0)+(t[C.VL]||0);
+    var dy=t[C.DY];
+    if(dy&&dy>=_t12StDate&&dy<=_t12EndDate) t12mMap[sid]=(t12mMap[sid]||0)+(t[C.VL]||0);
   });
   Object.keys(ar).forEach(function(sid){
     var a=ar[sid];
