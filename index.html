@@ -1962,6 +1962,7 @@ function fhSetRevMode(mode){
   document.getElementById('fhRevYtdBtn').style.border=mode==='ytd'?'none':'1px solid #334155';
   document.getElementById('fhRevT12mBtn').style.background=mode==='t12m'?'#3b82f6':'#1e293b';
   document.getElementById('fhRevT12mBtn').style.color=mode==='t12m'?'#fff':'#64748b';
+  document.getElementById('fhRevT12mBtn').style.border=mode==='t12m'?'none':'1px solid #334155';
   _buildFhAmCache();
   renderFH();
 }
@@ -2285,7 +2286,7 @@ function renderFHChart(accts){
 
 function renderFHTable(accts){
   var xKey=_fhDsoMode==='simple'?'x_simple':'x_aged';
-  var dsoLabel=_fhDsoMode==='simple'?'DSO Simple':'DSO Aged';
+  var dsoLabel=_fhDsoMode==='simple'?'DSO Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'DSO Aged';
   var thS='padding:6px 8px;text-align:right;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;';
   var thSL='padding:6px 8px;text-align:left;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;';
   var h='<thead><tr>'
@@ -2375,14 +2376,13 @@ function fhClearSelection(){
 function fhReset(){
   _fhSelGrades=new Set(['A+']);
   _fhSelAccount=null;
-  _fhDsoMode='simple';
-  _fhRevMode='ytd';
   _fhSelDate='latest';
   var sel=document.getElementById('fhDateSelect');
   if(sel) sel.value='latest';
   document.getElementById('fhTableTitle').textContent='';
   fhCloseTrend();
-  renderFH();
+  fhSetDsoMode('simple');
+  fhSetRevMode('ytd');
 }
 
 // ======== FH TREND ========
