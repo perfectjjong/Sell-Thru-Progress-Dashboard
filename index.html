@@ -2035,24 +2035,22 @@ function fhGetAccounts(){
   // Credit Term: ar.current.accts[id].cd (SAP ZTERM 기반, 없으면 90일 default)
   Object.keys(ar).forEach(function(sid){ if(ar[sid].cd) PT_MAP[sid]=ar[sid].cd; });
 
-  // 1단계: 전체 등급별 평균 (DSO - Credit Term) 계산
-  var gradeDsoS={}, gradeDsoA={};
+  // 1단계: 등급별 평균 OVD Rate 계산 (Y 기준선용)
+  var gradeOvdR={};
   Object.keys(ar).forEach(function(sid){
     var cls=CLS_MAP2[sid]||'Unclassified';
-    var cache=window._fhAmCache&&window._fhAmCache[sid];
-    var pt=PT_MAP[sid]||90;
-    if(!cache) return;
-    if(cache.dso_simple!=null){ if(!gradeDsoS[cls]) gradeDsoS[cls]=[]; gradeDsoS[cls].push(cache.dso_simple-pt); }
-    if(cache.dso_aged!=null){   if(!gradeDsoA[cls]) gradeDsoA[cls]=[]; gradeDsoA[cls].push(cache.dso_aged-pt); }
+    var a=ar[sid], bal=a.bal||0, ovd=a.ovd||0;
+    if(bal<=0) return;
+    if(!gradeOvdR[cls]) gradeOvdR[cls]=[];
+    gradeOvdR[cls].push(ovd/bal*100);
   });
-  var avgDsoS={}, avgDsoA={};
-  Object.keys(gradeDsoS).forEach(function(g){ avgDsoS[g]=gradeDsoS[g].reduce(function(a,b){return a+b;},0)/gradeDsoS[g].length; });
-  Object.keys(gradeDsoA).forEach(function(g){ avgDsoA[g]=gradeDsoA[g].reduce(function(a,b){return a+b;},0)/gradeDsoA[g].length; });
+  var avgOvdR={};
+  Object.keys(gradeOvdR).forEach(function(g){ avgOvdR[g]=gradeOvdR[g].reduce(function(a,b){return a+b;},0)/gradeOvdR[g].length; });
 
   // 2단계: 선택된 등급 계정 빌드 (txn 기반 계정만 — Sell-Thru KPI와 동일 범위)
   var accts=[];
   Object.keys(ar).forEach(function(sid){
-    if(!txnIds.has(sid)) return; // txn에 없는 계정 제외
+    if(!txnIds.has(sid)) return;
     var a=ar[sid];
     var cls=CLS_MAP2[sid]||'Unclassified';
     if(!_fhSelGrades.has(cls)) return;
@@ -2060,8 +2058,6 @@ function fhGetAccounts(){
     var cache=window._fhAmCache&&window._fhAmCache[sid];
     var dso_s=cache?cache.dso_simple:null;
     var dso_a=cache?cache.dso_aged:null;
-    var x_s=dso_s!=null?dso_s-pt:null;
-    var x_a=dso_a!=null?dso_a-pt:null;
     var bal=a.bal||0, ovd=a.ovd||0;
     var ovd_rate=bal>0?(ovd/bal*100):0;
     var revForMode=cache?(_fhRevMode==='t12m'?cache.t12m:cache.v26):0;
@@ -2071,8 +2067,8 @@ function fhGetAccounts(){
       cl:a.cl||0, bal:bal, ovd:ovd, ovd_rate:ovd_rate,
       o1:a.o1||0, o2:a.o2||0, o3:a.o3||0,
       dso_simple:dso_s, dso_aged:dso_a,
-      dso_avg_s:avgDsoS[cls], dso_avg_a:avgDsoA[cls],
-      x_simple:x_s, x_aged:x_a, y_val:-ovd_rate,
+      ovd_avg:avgOvdR[cls]||20,
+      x_simple:dso_s, x_aged:dso_a, y_val:-ovd_rate,
       no_rev:!!no_rev
     });
   });
@@ -2167,11 +2163,13 @@ function renderFHChart(accts){
   var normalPts=accts.filter(function(a){return a[xKey]!=null;});
   var noRevPts=accts.filter(function(a){return a.no_rev&&a[xKey]==null&&a.bal>0;});
 
-  // 기준선: 정상 계정들의 통합 평균 DSO
-  var dsoVals=normalPts.map(function(a){return a[xKey];});
-  var selAvgDso=dsoVals.length?dsoVals.reduce(function(a,b){return a+b;},0)/dsoVals.length:0;
+  // X 기준선: DPO 180d 고정 (실제 HQ 결제 주기)
+  var selAvgDso=180;
+  // Y 기준선: 선택 계정 평균 OVD Rate
+  var selAvgOvd=normalPts.length?normalPts.reduce(function(s,a){return s+a.ovd_rate;},0)/normalPts.length:20;
 
   // no_rev 계정 X값: 정상 계정 최대 DSO + 30% (차트 우측 끝 Critical 영역)
+  var dsoVals=normalPts.map(function(a){return a[xKey];});
   var maxNormalDso=dsoVals.length?Math.max.apply(null,dsoVals):300;
   var noRevX=(maxNormalDso>0?maxNormalDso:300)*1.3+50;
   noRevPts.forEach(function(a){ a._chartX=noRevX; });
@@ -2207,8 +2205,8 @@ function renderFHChart(accts){
   var ctx=document.getElementById('fhChart').getContext('2d');
   var quadrantPlugin={id:'quadrant',beforeDraw:function(chart){
     var ctx2=chart.ctx, xa=chart.scales.x, ya=chart.scales.y;
-    // X기준: 선택 등급 통합 평균 DSO / Y기준: Overdue Rate -20%
-    var x0=xa.getPixelForValue(selAvgDso), y0=ya.getPixelForValue(-20);
+    // X기준: DPO 180d (실제 결제주기) / Y기준: 선택 계정 평균 OVD Rate
+    var x0=xa.getPixelForValue(selAvgDso), y0=ya.getPixelForValue(-selAvgOvd);
     var l=xa.left,r2=xa.right,t=ya.top,b=ya.bottom;
     ctx2.save();
     // X reverse:true → 픽셀 LEFT = DATA 높음(HIGH DSO=나쁨), 픽셀 RIGHT = DATA 낮음(LOW DSO=좋음)
@@ -2225,8 +2223,8 @@ function renderFHChart(accts){
     // 기준선 레이블
     ctx2.font='bold 10px sans-serif'; ctx2.globalAlpha=0.8;
     ctx2.fillStyle='#94a3b8';
-    ctx2.fillText('Avg '+selAvgDso.toFixed(0)+'d',x0+4,t+10);
-    ctx2.fillText('20%',l+4,y0-4);
+    ctx2.fillText('DPO 180d',x0+4,t+10);
+    ctx2.fillText('Avg '+selAvgOvd.toFixed(0)+'%',l+4,y0-4);
     ctx2.globalAlpha=0.75; ctx2.font='bold 11px sans-serif';
     ctx2.fillStyle='#fb923c'; ctx2.fillText('🔶 Anomaly',l+8,t+16);
     ctx2.fillStyle='#ef4444'; ctx2.fillText('🔴 Critical',l+8,b-10);
@@ -2263,20 +2261,19 @@ function renderFHChart(accts){
           var a=ctx.raw._a;
           var xv=ctx.raw.x;
           var dso=_fhDsoMode==='simple'?a.dso_simple:a.dso_aged;
-          var avg=_fhDsoMode==='simple'?a.dso_avg_s:a.dso_avg_a;
           return [a.name+' ('+a.cls+')'+(a.no_rev?' ⚠ No Revenue':''),
             a.no_rev?'DSO: N/A ('+(_fhRevMode==='t12m'?'T12M':'2026')+' 매출 없음/마이너스) → Critical 강제배치'
-              :'DSO: '+(dso!=null?dso.toFixed(1):'?')+'d  |  선택등급 평균: '+selAvgDso.toFixed(1)+'d  '+(dso!=null&&dso<=selAvgDso?'✅평균이하':'⬆평균초과'),
-            'Overdue Rate: '+a.ovd_rate.toFixed(1)+'%  '+(a.ovd_rate<=20?'✅':'🔴 >20%'),
+              :'DSO: '+(dso!=null?dso.toFixed(1):'?')+'d  |  DPO 기준 180d  '+(dso!=null&&dso<=180?'✅회수완료':'🔴미회수'),
+            'Overdue Rate: '+a.ovd_rate.toFixed(1)+'%  |  등급평균 '+selAvgOvd.toFixed(0)+'%  '+(a.ovd_rate<=selAvgOvd?'✅':'🔴초과'),
             'AR Balance: SAR '+(a.bal/1000).toFixed(0)+'K',
             'Overdue: SAR '+(a.ovd/1000).toFixed(0)+'K'];
         }}}
       },
       scales:{
-        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  기준선: 선택 등급 평균  ←높음  낮음→',color:'#64748b',font:{size:11}},
+        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  기준선: DPO 180d  ←높음  낮음→',color:'#64748b',font:{size:11}},
           ticks:{color:'#64748b',callback:function(v){return v.toFixed(0)+'d';}},
           grid:{color:'#1e293b'},border:{color:'#475569'}},
-        y:{title:{display:true,text:'← Overdue Rate 높음  |  낮음 → (기준선 20%)',color:'#64748b',font:{size:11}},
+        y:{title:{display:true,text:'← Overdue Rate 높음  |  낮음 → (기준선: 선택 계정 평균)',color:'#64748b',font:{size:11}},
           ticks:{color:'#64748b',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
           grid:{color:'#1e293b'},border:{color:'#475569'}}
       }
@@ -2303,12 +2300,13 @@ function renderFHTable(accts){
     +'<th style="'+thS+'">OVD 31-60</th>'
     +'<th style="'+thS+'">OVD 60+</th>'
     +'<th style="'+thS+'">'+dsoLabel+'</th>'
-    +'<th style="'+thS+'">vs 등급평균</th>'
+    +'<th style="'+thS+'">vs DPO 180d</th>'
     +'<th style="'+thS+'">Quadrant</th>'
     +'</tr></thead><tbody>';
-  // 테이블용 선택 등급 통합 평균 DSO
-  var tblDsoVals=accts.filter(function(a){return a[xKey]!=null;}).map(function(a){return a[xKey];});
-  var tblAvgDso=tblDsoVals.length?tblDsoVals.reduce(function(a,b){return a+b;},0)/tblDsoVals.length:0;
+  var tblAvgDso=180; // X 기준선: DPO 180d 고정
+  // Y 기준선: 테이블 계정 평균 OVD Rate
+  var tblOvdVals=accts.filter(function(a){return a.bal>0;}).map(function(a){return a.ovd_rate;});
+  var tblAvgOvd=tblOvdVals.length?tblOvdVals.reduce(function(a,b){return a+b;},0)/tblOvdVals.length:20;
   // no_rev 계정은 맨 앞(가장 위험)에 정렬
   var sorted=accts.slice().sort(function(a,b){
     if(a.no_rev&&!b.no_rev) return -1;
@@ -2318,10 +2316,9 @@ function renderFHTable(accts){
   var fmtN=function(v){return v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0);};
   sorted.forEach(function(a){
     var x=a[xKey], dso=_fhDsoMode==='simple'?a.dso_simple:a.dso_aged;
-    var avg=tblAvgDso;
-    var isSafe=x!=null&&x<=tblAvgDso&&a.ovd_rate<=20;
-    var isWatch=x!=null&&x<=tblAvgDso&&a.ovd_rate>20;
-    var isAnom=x!=null&&x>tblAvgDso&&a.ovd_rate<=20;
+    var isSafe=x!=null&&x<=180&&a.ovd_rate<=tblAvgOvd;
+    var isWatch=x!=null&&x<=180&&a.ovd_rate>tblAvgOvd;
+    var isAnom=x!=null&&x>180&&a.ovd_rate<=tblAvgOvd;
     var quad=x==null?'-':isSafe?'<span style="color:#10b981;font-weight:600;">Safe</span>'
       :isWatch?'<span style="color:#f59e0b;font-weight:600;">Watch</span>'
       :isAnom?'<span style="color:#fb923c;font-weight:600;">Anomaly</span>'
@@ -2330,14 +2327,14 @@ function renderFHTable(accts){
     var tdS='padding:5px 8px;text-align:right;color:#cbd5e1;border-bottom:1px solid #1e293b;white-space:nowrap;';
     var tdSL='padding:5px 8px;text-align:left;color:#e2e8f0;border-bottom:1px solid #1e293b;';
     var clsColor=FH_GRADE_COLORS[a.cls]||'#94a3b8';
-    var rateColor=a.ovd_rate>20?'#ef4444':a.ovd_rate>10?'#f59e0b':'#10b981';
-    var xColor=x!=null&&x>tblAvgDso?'#ef4444':'#10b981';
+    var rateColor=a.ovd_rate>tblAvgOvd?'#ef4444':a.ovd_rate>(tblAvgOvd*0.5)?'#f59e0b':'#10b981';
+    var xColor=x!=null&&x>180?'#ef4444':'#10b981';
     var dsoCell=a.no_rev
       ?'<span style="color:#ef4444;font-size:10px;">N/A ⚠</span>'
       :(dso!=null?dso.toFixed(1)+'d':'-');
     var vsAvgCell=a.no_rev
       ?'<span style="color:#ef4444;font-size:10px;">No Revenue</span>'
-      :(x!=null?(x-tblAvgDso>=0?'+':'')+(x-tblAvgDso).toFixed(1)+'d':'-');
+      :(x!=null?(x-180>=0?'+':'')+(x-180).toFixed(1)+'d':'-');
     var criticalQuad='<span style="color:#ef4444;font-weight:600;">Critical</span>';
     h+='<tr style="cursor:pointer;'+rowBg+'" onclick="fhRowClick(\''+a.id+'\')">'
       +'<td style="'+tdSL+'">'+(a.no_rev?'<span style="color:#ef4444;font-size:10px;margin-right:3px;">⚠</span>':'')+a.name+'</td>'
