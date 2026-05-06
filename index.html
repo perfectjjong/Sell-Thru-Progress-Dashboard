@@ -149,7 +149,7 @@ tfoot .fz{background:#0f172a}
 <div class="header">
   <h1>Sell-Thru Dashboard — Account Analysis</h1>
   <div class="header-right">
-    <span><span class="lbl">Updated</span><span class="val">2026-05-06</span></span>
+    <span><span class="lbl">Updated</span><span class="val">2026-05-07</span></span>
     <span><span class="lbl">Period</span><span class="val">2024 ~ 2026</span></span>
     <span><span class="lbl">Accounts</span><span class="val" id="hdrAccounts">-</span></span>
     <span><span class="lbl">OUD Date</span><span class="val" id="hdrOudDate">-</span></span>
@@ -254,45 +254,104 @@ tfoot .fz{background:#0f172a}
 <!-- FH Filter Bar -->
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
   <div>
-    <span style="font-size:11px;font-weight:600;color:#94a3b8;margin-right:6px;">Grade</span>
+    <span style="font-size:11px;font-weight:600;color:#e2e8f0;margin-right:6px;">Grade</span>
     <div id="fhGradeFilter" style="display:inline-flex;flex-wrap:wrap;gap:4px;"></div>
   </div>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
     <div style="display:flex;gap:0;">
       <button id="fhRevYtdBtn" onclick="fhSetRevMode('ytd')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">YTD</button>
-      <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
+      <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
     </div>
     <div style="display:flex;gap:0;">
       <button id="fhDsoSimpleBtn" onclick="fhSetDsoMode('simple')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">DSO Simple</button>
-      <button id="fhDsoAgedBtn" onclick="fhSetDsoMode('aged')" style="padding:5px 14px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">DSO Aged</button>
+      <button id="fhDsoAgedBtn" onclick="fhSetDsoMode('aged')" style="padding:5px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">DSO Aged</button>
     </div>
     <div style="display:flex;align-items:center;gap:5px;">
-      <span style="font-size:11px;color:#64748b;">📅</span>
+      <span style="font-size:11px;color:#94a3b8;">📅</span>
       <select id="fhDateSelect" onchange="fhSetDate(this.value)" style="padding:5px 8px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:11px;outline:none;">
         <option value="latest">Latest</option>
       </select>
     </div>
-    <button onclick="fhReset()" style="padding:5px 14px;background:#0f172a;color:#64748b;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Reset all filters">↺ Reset</button>
+    <button id="fhCompareBtn" onclick="fhToggleCompare()" style="padding:5px 14px;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Compare YTD vs T12M">↔ Compare</button>
+    <button onclick="fhReset()" style="padding:5px 14px;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Reset all filters">↺ Reset</button>
   </div>
 </div>
 
 <!-- FH KPI Strip -->
 <div id="fhKpiStrip" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:16px;"></div>
 
+<!-- FH Compare View -->
+<div id="fhCompareWrap" style="display:none;">
+  <div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">YTD vs T12M Comparison <span style="color:#94a3b8;font-size:11px;">— Simple DSO basis</span></h3>
+      <span style="font-size:10px;color:#94a3b8;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%)</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div style="font-size:11px;color:#60a5fa;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">◀ YTD (Year-to-Date)</div>
+        <div id="fhCompareYtdWrap" style="position:relative;height:380px;"></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#a78bfa;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">T12M (Trailing T12M) ▶</div>
+        <div id="fhCompareT12mWrap" style="position:relative;height:380px;"></div>
+      </div>
+    </div>
+  </div>
+  <div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
+    <h3 style="margin:0 0 12px;font-size:13px;color:#e2e8f0;font-weight:500;">Quadrant Shifts <span id="fhMoveCount" style="color:#94a3b8;font-size:11px;"></span></h3>
+    <div style="overflow-x:auto;max-height:360px;overflow-y:auto;"><table id="fhMoveTable" style="width:100%;border-collapse:collapse;font-size:11px;"></table></div>
+  </div>
+</div>
+
+<!-- Advisory Panel (전체 FH 탭에서 접근 가능 — CompareWrap 밖) -->
+<div id="fhAdvisoryPanel" style="display:none;background:#0f172a;border-radius:10px;border:1px solid #7c3aed;margin-bottom:16px;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,#1e1b4b,#1e293b);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span id="fhAdvSignal" style="font-size:22px;"></span>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="fhAdvName" style="font-size:14px;font-weight:700;color:#e2e8f0;"></span>
+          <span id="fhAdvInvBadge" style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;"></span>
+        </div>
+        <div id="fhAdvHeadline" style="font-size:11px;color:#a78bfa;margin-top:2px;"></div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="fhAdvGenerated" style="font-size:10px;color:#475569;"></span>
+      <div style="display:flex;gap:0;">
+        <button id="fhAdvLangEn" onclick="fhAdvSetLang('en')" style="padding:3px 10px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:11px;font-weight:700;">ENG</button>
+        <button id="fhAdvLangKo" onclick="fhAdvSetLang('ko')" style="padding:3px 10px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:11px;font-weight:700;">KOR</button>
+      </div>
+      <button onclick="fhCloseAdvisory()" style="padding:4px 12px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;">✕ Close</button>
+    </div>
+  </div>
+  <!-- 탭 -->
+  <div style="display:flex;border-bottom:1px solid #1e293b;">
+    <button id="fhAdvTab0" onclick="fhAdvSwitchTab(0)" style="flex:1;padding:10px;background:#1e1b4b;color:#a78bfa;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid #7c3aed;">💰 Finance</button>
+    <button id="fhAdvTab1" onclick="fhAdvSwitchTab(1)" style="flex:1;padding:10px;background:transparent;color:#64748b;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid transparent;">📊 Sales</button>
+    <button id="fhAdvTab2" onclick="fhAdvSwitchTab(2)" style="flex:1;padding:10px;background:transparent;color:#64748b;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid transparent;">📋 Synthesis</button>
+  </div>
+  <!-- 탭 콘텐츠 -->
+  <div id="fhAdvContent0" style="padding:20px;"></div>
+  <div id="fhAdvContent1" style="padding:20px;display:none;"></div>
+  <div id="fhAdvContent2" style="padding:20px;display:none;"></div>
+</div>
+
 <!-- FH Chart -->
-<div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
+<div id="fhChartBox" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h3 style="margin:0;font-size:13px;color:#94a3b8;font-weight:500;">Financial Health Matrix <span id="fhChartSubtitle" style="color:#64748b;font-size:11px;"></span></h3>
-    <span style="font-size:10px;color:#475569;">X축: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y축: Overdue Rate (%) vs 선택계정 평균 &nbsp;|&nbsp; 버블 크기: AR Balance</span>
+    <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Financial Health Matrix <span id="fhChartSubtitle" style="color:#94a3b8;font-size:11px;"></span></h3>
+    <span style="font-size:10px;color:#94a3b8;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%) vs selected acct avg &nbsp;|&nbsp; Bubble: AR Balance</span>
   </div>
   <div id="fhChartWrap" style="position:relative;height:480px;"></div>
 </div>
 
 <!-- FH Table -->
-<div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:24px;">
+<div id="fhTableBox" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:24px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <h3 style="margin:0;font-size:13px;color:#94a3b8;font-weight:500;">Account Detail <span id="fhTableTitle" style="color:#64748b;font-size:11px;"></span></h3>
-    <button onclick="fhClearSelection()" style="padding:4px 12px;background:#334155;color:#94a3b8;border:none;border-radius:6px;font-size:11px;cursor:pointer;">Show All</button>
+    <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Account Detail <span id="fhTableTitle" style="color:#94a3b8;font-size:11px;"></span></h3>
+    <button onclick="fhClearSelection()" style="padding:4px 12px;background:#334155;color:#e2e8f0;border:none;border-radius:6px;font-size:11px;cursor:pointer;">Show All</button>
   </div>
   <div style="overflow-x:auto;max-height:400px;overflow-y:auto;"><table id="fhTable" style="width:100%;border-collapse:collapse;font-size:11px;"></table></div>
 </div>
@@ -300,12 +359,12 @@ tfoot .fz{background:#0f172a}
 <!-- FH Trend Panel -->
 <div id="fhTrendPanel" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:24px;display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <h3 id="fhTrendTitle" style="margin:0;font-size:13px;color:#94a3b8;font-weight:500;">Trend</h3>
-    <button onclick="fhCloseTrend()" style="padding:3px 10px;background:#334155;color:#94a3b8;border:none;border-radius:5px;cursor:pointer;font-size:11px;">✕ Close</button>
+    <h3 id="fhTrendTitle" style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Trend</h3>
+    <button onclick="fhCloseTrend()" style="padding:3px 10px;background:#334155;color:#e2e8f0;border:none;border-radius:5px;cursor:pointer;font-size:11px;">✕ Close</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-    <div><div style="font-size:10px;color:#64748b;margin-bottom:6px;">Overdue Rate (%)</div><div id="fhTrendChartOvdWrap" style="height:180px;"></div></div>
-    <div><div style="font-size:10px;color:#64748b;margin-bottom:6px;">AR Balance vs Overdue (SAR)</div><div id="fhTrendChartBalWrap" style="height:180px;"></div></div>
+    <div><div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Overdue Rate (%)</div><div id="fhTrendChartOvdWrap" style="height:180px;"></div></div>
+    <div><div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">AR Balance vs Overdue (SAR)</div><div id="fhTrendChartBalWrap" style="height:180px;"></div></div>
   </div>
 </div>
 
@@ -738,10 +797,11 @@ function fmt(n){if(n==null)return'-';if(Math.abs(n)>=1e6)return(n/1e6).toFixed(1
 function fmtF(n){return n?Math.round(n).toLocaleString('en-US'):'0';}
 function gv(r){return mode==='value'?r[C.VL]:r[C.QT];}
 function calcDaysYtd(){
+  var yr=_fhCurY||new Date().getFullYear();
   var sd=RAW?RAW.sell_thru_date||'05-02':'05-02';
   var p=sd.split('-');
-  var d=new Date(2026,parseInt(p[0])-1,parseInt(p[1]));
-  return Math.round((d-new Date(2026,0,1))/86400000)+1;
+  var d=new Date(yr,parseInt(p[0])-1,parseInt(p[1]));
+  return Math.round((d-new Date(yr,0,1))/86400000)+1;
 }
 function calcAgedDso(bal,ovd,o1,o2,o3){
   if(!bal||bal<=0) return null;
@@ -1914,11 +1974,18 @@ function switchMainTab(tab){
 
 // ======== B2C FINANCIAL HEALTH ========
 var _fhDsoMode='simple';
+var _fhAdvisory=null;  // fh_advisory.json 캐시
+var _fhSortCol=null, _fhSortDir='asc';
+var _fhAdvLang='en';   // 'en' | 'ko'
+var _fhAdvCurrent=null; // 현재 표시 중인 adv 객체
+var _fhCompareMode=false;
+var _fhCompChartY=null, _fhCompChartT=null;
 var _fhRevMode='ytd';
 var _fhSelGrades=new Set(['A+']);
 var _fhSelAccount=null;
 var _fhSelDate='latest'; // 'latest' or 'YYYY-MM-DD'
 var _fhChart=null;
+var _fhCurY=new Date().getFullYear();
 
 var FH_GRADE_COLORS={'A+':'#f59e0b','A':'#10b981','B':'#3b82f6','C':'#8b5cf6','D':'#ef4444','IR-X':'#64748b','OR-X':'#64748b','SME-X':'#64748b'};
 var FH_ALL_GRADES=['A+','A','B','C','D','IR-X','OR-X','SME-X'];
@@ -1928,12 +1995,7 @@ function fhSetDate(val){
   _fhSelAccount=null;
   document.getElementById('fhTableTitle').textContent='';
   fhCloseTrend();
-  // 날짜 변경 시 캐시 재빌드
-  _buildFhAmCache();
-  var accts=fhGetAccounts();
-  renderFHKpi(accts);
-  renderFHChart(accts);
-  renderFHTable(accts);
+  renderFH();
 }
 
 function fhGetArData(){
@@ -1979,7 +2041,7 @@ function fhBuildGradeFilter(){
     (RAW.master||[]).forEach(function(m){ CLS_MAP2[String(int_id(m.id))]=m.classification||'Unclassified'; });
     var txnIds=new Set();
     (RAW.txn||[]).forEach(function(t){ txnIds.add(String(int_id(t[C.ID]))); });
-    var ar=((RAW.ar||{}).current||{}).accts||{};
+    var ar=fhGetArData();
     Object.keys(ar).forEach(function(sid){
       if(!txnIds.has(sid)) return;
       var cls=CLS_MAP2[sid]||'Unclassified';
@@ -1991,7 +2053,7 @@ function fhBuildGradeFilter(){
   var allSel=_fhSelGrades.size===FH_ALL_GRADES.length;
   var allBtn=document.createElement('button');
   allBtn.textContent='All';
-  allBtn.style.cssText='padding:3px 12px;border-radius:4px;border:1px solid '+(allSel?'#94a3b8':'#334155')+';background:'+(allSel?'#94a3b822':'transparent')+';color:'+(allSel?'#e2e8f0':'#475569')+';cursor:pointer;font-size:11px;font-weight:700;margin-right:4px;';
+  allBtn.style.cssText='padding:3px 12px;border-radius:4px;border:1px solid '+(allSel?'#94a3b8':'#334155')+';background:'+(allSel?'#94a3b822':'transparent')+';color:'+(allSel?'#e2e8f0':'#94a3b8')+';cursor:pointer;font-size:11px;font-weight:700;margin-right:4px;';
   allBtn.onclick=function(){
     _fhSelGrades=new Set(FH_ALL_GRADES);
     _fhSelAccount=null;
@@ -2006,7 +2068,7 @@ function fhBuildGradeFilter(){
     var sel=_fhSelGrades.has(g);
     var cnt=gradeCnt[g]||0;
     btn.innerHTML=g+'<span style="font-size:9px;font-weight:400;opacity:0.8;margin-left:3px;">('+cnt+')</span>';
-    btn.style.cssText='padding:3px 10px;border-radius:4px;border:1px solid '+(sel?FH_GRADE_COLORS[g]:'#334155')+';background:'+(sel?FH_GRADE_COLORS[g]+'22':'transparent')+';color:'+(sel?FH_GRADE_COLORS[g]:'#475569')+';cursor:pointer;font-size:11px;font-weight:600;';
+    btn.style.cssText='padding:3px 10px;border-radius:4px;border:1px solid '+(sel?FH_GRADE_COLORS[g]:'#334155')+';background:'+(sel?FH_GRADE_COLORS[g]+'22':'transparent')+';color:'+(sel?FH_GRADE_COLORS[g]:'#94a3b8')+';cursor:pointer;font-size:11px;font-weight:600;';
     btn.onclick=function(){
       if(_fhSelGrades.has(g)){
         if(_fhSelGrades.size>1) _fhSelGrades.delete(g);
@@ -2078,6 +2140,512 @@ function fhGetAccounts(){
 
 function int_id(v){ return Math.round(parseFloat(v)); }
 
+// ======== FH ADVISORY ========
+function fhLoadAdvisory(cb){
+  if(_fhAdvisory){cb(_fhAdvisory);return;}
+  fetch('fh_advisory.json?t='+Date.now())
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(data){_fhAdvisory=data;cb(data);})
+    .catch(function(){cb(null);});
+}
+
+var _fhAdvTab=0;
+function fhAdvSwitchTab(idx){
+  _fhAdvTab=idx;
+  [0,1,2].forEach(function(i){
+    var btn=document.getElementById('fhAdvTab'+i);
+    var cont=document.getElementById('fhAdvContent'+i);
+    var active=i===idx;
+    btn.style.background=active?'#1e1b4b':'transparent';
+    btn.style.color=active?'#a78bfa':'#64748b';
+    btn.style.borderBottom=active?'2px solid #7c3aed':'2px solid transparent';
+    cont.style.display=active?'':'none';
+  });
+}
+
+function fhAdvSetLang(lang){
+  _fhAdvLang=lang;
+  var enBtn=document.getElementById('fhAdvLangEn');
+  var koBtn=document.getElementById('fhAdvLangKo');
+  if(enBtn&&koBtn){
+    enBtn.style.background=lang==='en'?'#3b82f6':'#1e293b';
+    enBtn.style.color=lang==='en'?'#fff':'#64748b';
+    koBtn.style.background=lang==='ko'?'#3b82f6':'#1e293b';
+    koBtn.style.color=lang==='ko'?'#fff':'#64748b';
+  }
+  if(_fhAdvCurrent) fhRenderAdvisoryContent(_fhAdvCurrent);
+}
+function fhCloseAdvisory(){
+  document.getElementById('fhAdvisoryPanel').style.display='none';
+}
+
+var SIG_ICON={'red':'🔴','yellow':'🟡','green':'🟢'};
+var SIG_COLOR={'red':'#ef4444','yellow':'#f59e0b','green':'#10b981'};
+
+function fhRenderAdvisoryContent(adv){
+  var panel=document.getElementById('fhAdvisoryPanel');
+  panel.style.display='';
+  _fhAdvCurrent=adv;
+  var ko=_fhAdvLang==='ko';
+
+  // 헤더
+  var signal=adv.signal||'yellow';
+  document.getElementById('fhAdvSignal').textContent=SIG_ICON[signal]||'🟡';
+  document.getElementById('fhAdvName').textContent=adv.name||'';
+  var synth=adv.synthesis||{};
+  var headlineEn=synth.headline||adv.finance&&adv.finance.headline||'';
+  var headlineKo=synth.headline_ko||adv.finance&&adv.finance.headline_ko||'';
+  document.getElementById('fhAdvHeadline').textContent=(ko&&headlineKo)?headlineKo:headlineEn;
+  document.getElementById('fhAdvGenerated').textContent=(_fhAdvisory&&_fhAdvisory.generated_at)?'Updated: '+_fhAdvisory.generated_at:'';
+  // KO 번역 미완 시 안내
+  var koReady=!!(synth.headline_ko||(adv.finance&&adv.finance.headline_ko));
+  var koNote=document.getElementById('fhAdvLangKo');
+  if(koNote) koNote.title=koReady?'한국어 번역 완료':'번역 준비 중...';
+
+  // Investment badge
+  var invSignal=adv.investment_signal||(synth.verdict&&synth.verdict.investment_signal)||'hold';
+  var invCfg={invest:{bg:'#10b98122',color:'#10b981',icon:'✅ INVEST'},hold:{bg:'#f59e0b22',color:'#f59e0b',icon:'⏸ HOLD'},exit:{bg:'#ef444422',color:'#ef4444',icon:'❌ EXIT'}};
+  var ic=invCfg[invSignal]||invCfg.hold;
+  var badge=document.getElementById('fhAdvInvBadge');
+  badge.textContent=ic.icon; badge.style.background=ic.bg; badge.style.color=ic.color;
+
+  // 탭 0 — Finance
+  var fin=adv.finance||{};
+  var c0=document.getElementById('fhAdvContent0');
+  c0.innerHTML=_renderAdvSection(fin, signal, adv.metrics||{}, ko);
+
+  // 탭 1 — Sales
+  var sal=adv.sales||{};
+  var c1=document.getElementById('fhAdvContent1');
+  var salesNote=sal.has_sellout_data===false?
+    '<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#64748b;">⚠ No weekly sell-out data for this account — analysis based on Sell-In patterns only</div>':'';
+  c1.innerHTML=salesNote+_renderAdvSection(sal, sal.signal||'yellow', adv.metrics||{}, ko);
+
+  // 탭 2 — Synthesis
+  c2=document.getElementById('fhAdvContent2');
+  c2.innerHTML=_renderSynthSection(synth, signal, adv, ko);
+
+  fhAdvSwitchTab(0);
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function _renderAdvSection(data, signal, metrics, ko){
+  if(!data||data.parse_error) return '<p style="color:#64748b;font-size:11px;">분석 데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.</p>';
+  var sc=SIG_COLOR[signal]||'#f59e0b';
+  var html='';
+  var headline=(ko&&data.headline_ko)||data.headline||'';
+  var analysis=(ko&&data.analysis_ko)||data.analysis||'';
+  var actions=(ko&&data.action_ko&&data.action_ko.length)?data.action_ko:data.action||[];
+  if(ko&&!data.headline_ko){
+    html+='<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
+  }
+  if(headline){
+    html+='<div style="background:'+sc+'22;border-left:3px solid '+sc+';padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:14px;">'
+         +'<span style="color:'+sc+';font-weight:700;font-size:12px;">'+headline+'</span></div>';
+  }
+  if(analysis){
+    html+='<div style="color:#cbd5e1;font-size:11px;line-height:1.7;margin-bottom:14px;">'+
+      analysis.replace(/\n/g,'<br>')+'</div>';
+  }
+  if(actions.length){
+    html+='<div style="background:#1e293b;border-radius:8px;padding:12px 14px;">'
+         +'<div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:1px;margin-bottom:8px;">ACTION</div>';
+    actions.forEach(function(a){
+      html+='<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;">'
+           +'<span style="color:#7c3aed;font-weight:700;margin-top:1px;">▶</span>'
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+a+'</span></div>';
+    });
+    html+='</div>';
+  }
+  return html;
+}
+
+function _renderSynthSection(data, signal, adv, ko){
+  if(!data||data.parse_error) return '<p style="color:#64748b;font-size:11px;">종합 분석 데이터를 불러오는 중입니다.</p>';
+  var sc=SIG_COLOR[signal]||'#f59e0b';
+  var html='';
+  var summary=(ko&&data.summary_3lines_ko&&data.summary_3lines_ko.length)?data.summary_3lines_ko:data.summary_3lines||[];
+  var decision=(ko&&data.decision_required_ko)||data.decision_required||'';
+  var options=(ko&&data.options_ko&&data.options_ko.length)?data.options_ko:data.options||[];
+  var timeline=(ko&&data.timeline_ko&&data.timeline_ko.length)?data.timeline_ko:data.timeline||[];
+
+  if(ko&&!data.summary_3lines_ko){
+    html+='<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
+  }
+
+  // Verdict 2축 배너
+  var verdict=data.verdict||{};
+  if(verdict.risk_level||verdict.investment_signal){
+    var invCfg={invest:{bg:'#10b98133',color:'#10b981',label:'✅ INVEST'},hold:{bg:'#f59e0b33',color:'#f59e0b',label:'⏸ HOLD'},exit:{bg:'#ef444433',color:'#ef4444',label:'❌ EXIT'}};
+    var ic=invCfg[verdict.investment_signal]||invCfg.hold;
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">'
+         +'<div style="background:'+SIG_COLOR[verdict.risk_level||signal]+'22;border:1px solid '+SIG_COLOR[verdict.risk_level||signal]+';border-radius:8px;padding:12px;text-align:center;">'
+         +'<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;font-weight:600;">COLLECTION RISK</div>'
+         +'<div style="font-size:20px;font-weight:700;color:'+SIG_COLOR[verdict.risk_level||signal]+';">'+(SIG_ICON[verdict.risk_level||signal]||'🟡')+' '+(verdict.risk_level||signal).toUpperCase()+'</div></div>'
+         +'<div style="background:'+ic.bg+';border:1px solid '+ic.color+';border-radius:8px;padding:12px;text-align:center;">'
+         +'<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;font-weight:600;">INVESTMENT</div>'
+         +'<div style="font-size:18px;font-weight:700;color:'+ic.color+';">'+ic.label+'</div></div>'
+         +'</div>';
+    var oneLine=(ko&&verdict.one_line_ko)||verdict.one_line||'';
+    if(oneLine){
+      html+='<div style="background:#1e293b;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#e2e8f0;font-style:italic;">'+oneLine+'</div>';
+    }
+  }
+
+  // 3줄 요약
+  if(summary.length){
+    html+='<div style="margin-bottom:16px;">';
+    summary.forEach(function(l,i){
+      html+='<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:6px;">'
+           +'<span style="background:'+sc+';color:#000;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;white-space:nowrap;margin-top:2px;">'+(i+1)+'</span>'
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+l+'</span></div>';
+    });
+    html+='</div>';
+  }
+
+  // 결정 필요사항
+  if(decision){
+    html+='<div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:8px;padding:12px 14px;margin-bottom:14px;">'
+         +'<div style="font-size:10px;color:#a78bfa;font-weight:700;letter-spacing:1px;margin-bottom:6px;">DECISION REQUIRED NOW</div>'
+         +'<div style="color:#e2e8f0;font-size:12px;font-weight:600;">'+decision+'</div></div>';
+  }
+
+  // 옵션
+  if(options.length){
+    html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">';
+    options.forEach(function(opt,i){
+      html+='<div style="background:#1e293b;border-radius:8px;padding:12px;">'
+           +'<div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:4px;">OPTION '+(i===0?'A':'B')+'</div>'
+           +'<div style="color:#e2e8f0;font-size:11px;font-weight:600;margin-bottom:4px;">'+(opt.option||'')+'</div>'
+           +'<div style="color:#94a3b8;font-size:10px;">'+(opt.consequence||'')+'</div></div>';
+    });
+    html+='</div>';
+  }
+
+  // 타임라인
+  if(timeline.length){
+    html+='<div style="background:#1e293b;border-radius:8px;padding:12px 14px;">'
+         +'<div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:1px;margin-bottom:10px;">TIMELINE</div>';
+    timeline.forEach(function(t){
+      html+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px;">'
+           +'<div style="background:#7c3aed;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-top:2px;">'+(t.deadline||'TBD')+'</div>'
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+(t.step||'')+'</span></div>';
+    });
+    html+='</div>';
+  }
+
+  return html;
+}
+
+function fhShowAdvisory(sid, name){
+  fhLoadAdvisory(function(advisory){
+    if(!advisory){
+      alert('Advisory data not yet generated.\n텔레그램에서 "FH 어드바이저리 업데이트" 를 요청하세요.');
+      return;
+    }
+    var adv=advisory.accounts&&advisory.accounts[sid];
+    if(!adv){
+      // 데이터 없는 계정 — 기본 패널 표시
+      document.getElementById('fhAdvisoryPanel').style.display='';
+      document.getElementById('fhAdvSignal').textContent='⏳';
+      document.getElementById('fhAdvName').textContent=name;
+      document.getElementById('fhAdvHeadline').textContent='Advisory not yet generated for this account';
+      document.getElementById('fhAdvContent0').innerHTML='<p style="color:#64748b;font-size:12px;padding:20px 0;">이 계정의 어드바이저리가 아직 생성되지 않았습니다.<br><br>텔레그램에서 <strong style="color:#a78bfa;">FH 어드바이저리 업데이트</strong>를 요청하시거나,<br>서버에서 <code style="color:#7c3aed;">python3 generate_fh_advisory.py</code> 를 실행하세요.</p>';
+      [1,2].forEach(function(i){document.getElementById('fhAdvContent'+i).innerHTML='';});
+      fhAdvSwitchTab(0);
+      document.getElementById('fhAdvisoryPanel').scrollIntoView({behavior:'smooth',block:'start'});
+      return;
+    }
+    fhRenderAdvisoryContent(adv);
+  });
+}
+
+// ======== FH COMPARE ========
+var FH_Q_COLORS={1:'#10b981',2:'#f97316',3:'#ef4444',4:'#f59e0b'};
+var FH_MOVE_INTERP={
+  '12':'Peak-season revenue swells the YTD denominator — AR collection is lagging behind order intake growth',
+  '21':'2026 order volume trailing prior-year pace — declining channel engagement widens the YTD vs T12M revenue gap',
+  '13':'Seasonal orders masking a critical collection breakdown — both DSO and overdue elevated on a full T12M basis',
+  '31':'Strong 2026 ordering pace absorbing the AR burden — healthy revenue flow normalising DSO and overdue simultaneously',
+  '14':'New invoices being settled but prior balances quietly accumulating — selective payment pattern beginning to form',
+  '41':'Recent payment discipline outpacing T12M overdue average — collection posture structurally improving',
+  '23':'Overdue compounding on top of already-elevated DSO — receivable aging accelerating with each billing cycle',
+  '32':'Slow payer but invoices eventually cleared over time — AR aging without active default on full T12M horizon',
+  '24':'DSO rising on T12M basis while overdue stays contained — growing balance without full payment breakdown',
+  '42':'Overdue improving but DSO deteriorating on T12M view — cash flow tightening despite recent payment intent',
+  '34':'New invoices cleared while aged balances persist — account cherry-picks which invoices to settle first',
+  '43':'Both DSO and overdue compounding over the T12M horizon — account health eroding beyond seasonal fluctuation'
+};
+
+function _fhDynamicInsight(mv, ytdAvgOvd){
+  var dsoY=mv.dsoY, dsoT=mv.dsoT;
+  var ovd=mv.a.ovd_rate, bal=mv.a.bal, ovdAmt=mv.a.ovd||0;
+  var o3=mv.a.o3||0, pt=mv.a.pt||90;
+  var key=mv.qY+''+mv.qT;
+
+  // DSO 계산 불가 (매출=0) 케이스 — no_rev 계정 전용 분기
+  if(dsoY==null||dsoT==null){
+    var ovdStr2=ovdAmt>=1e6?'SAR '+(ovdAmt/1e6).toFixed(1)+'M':'SAR '+Math.round(ovdAmt/1000)+'K';
+    var o3ratio=ovdAmt>0?o3/ovdAmt:0;
+    var ph2='', act2='';
+    if(ovd>=50&&o3ratio>=0.8){
+      // Alkhunaizan 패턴: 거래 중단 + 장기 연체 고착
+      ph2='Ordering halted in 2026 (net returns recorded). '+ovdStr2+' overdue ('+ovd.toFixed(0)+'% of AR), '
+        +Math.round(o3ratio*100)+'% aged 60d+ against '+pt+'d credit term. '
+        +'Account has effectively exited the relationship — this is no longer a collection issue, it is a trading continuity decision.';
+      act2='⚠ Escalate to senior management for trading relationship review: '
+        +'(1) Terminate credit line and pursue full legal recovery, OR '
+        +'(2) Negotiate structured settlement (partial cash + credit note) as the only condition for any future business. '
+        +'Do not approve new Sell-in under any circumstance until resolved. '
+        +'Assess '+ovdStr2+' for bad debt provision this quarter.';
+    } else if(ovd>=20){
+      ph2='No 2026 revenue — account disengaged. '+ovdStr2+' overdue ('+ovd.toFixed(0)+'% of AR). '
+        +'60d+ bucket: '+Math.round(o3ratio*100)+'%. Collection cannot rely on new order flow.';
+      act2='Direct KAM outreach this week to establish repayment plan. '
+        +'Freeze Sell-in approval. Review account for grade downgrade if no response within 2 weeks.';
+    } else if(ovd>0){
+      ph2='2026 purchases minimal or zero. Outstanding AR '+ovdStr2+' with '+ovd.toFixed(0)+'% overdue. Monitoring required.';
+      act2='Contact account for payment confirmation. Assess whether disengagement is temporary (channel consolidation) or permanent.';
+    } else {
+      return FH_MOVE_INTERP[key]||'Quadrant shift';
+    }
+    return '<span style="color:#e2e8f0;">'+ph2+'</span><br><span style="color:#38bdf8;font-weight:600;">▶ '+act2+'</span>';
+  }
+
+  // buyRatio = dsoT/dsoY : 높을수록 최근 구매 페이스 증가
+  var buyRatio=dsoT/dsoY;
+  var ovdK=Math.round(ovdAmt/1000);
+  var ovdStr=ovdAmt>=1e6?'SAR '+(ovdAmt/1e6).toFixed(1)+'M':'SAR '+ovdK+'K';
+  var pct=function(v){return Math.round((v-1)*100);};
+
+  var ph='', act='';
+
+  if(key==='12'){
+    if(buyRatio>=1.3&&ovd<5){
+      // Black Box 패턴: 빠르게 사고 OVD 깨끗
+      ph='YTD order pace '+(pct(buyRatio))+'% above T12M avg — active peak-season stocking with clean payment record (OVD '+ovd.toFixed(1)+'%). '
+        +'If Sell-out doesn\'t accelerate, inventory overhang will replicate an overdue pattern by Q3.';
+      act='Push Sell-out support now (co-promo, display, installer priority). Track POS weekly. '
+        +'If no turnover improvement by end-June, initiate pre-emptive collection call before Credit Terms are breached.';
+    } else if(buyRatio>=1.3&&ovd>=5){
+      // Bin Momen 패턴: 빠르게 사면서 연체도 쌓임
+      ph='Order pace '+(pct(buyRatio))+'% above T12M avg yet OVD '+ovd.toFixed(1)+'% ('+ovdStr+') already accruing — account is stocking up while existing AR remains uncleared.';
+      act='Freeze further Sell-in immediately. Request face-to-face repayment schedule this week. '
+        +(o3/Math.max(ovdAmt,1)>0.3?'60d+ bucket exceeds 30% of total overdue — escalate to Credit Review.':'Offer Sell-out support only upon partial overdue clearance.');
+    } else if(buyRatio>=1.1&&ovd<ytdAvgOvd){
+      // Alsheta 패턴: 중간 페이스 증가, 낮은 OVD
+      ph='Order pace '+(pct(buyRatio))+'% above T12M avg — moderate seasonal build, OVD '+ovd.toFixed(1)+'% below grade average. '
+        +'T12M DSO reflects prior-period carry; current trajectory is acceptable but bears watching.';
+      act='Accelerate channel Sell-out through promotional support. '
+        +'If Sell-out pace does not match Sell-in rate within 4 weeks, proactively shorten next order cycle to de-risk AR.';
+    } else {
+      ph='T12M DSO '+Math.round(dsoT)+'d vs YTD '+Math.round(dsoY)+'d (+'+Math.round(dsoT-dsoY)+'d). '
+        +'Purchase pace relative to T12M baseline is '+(buyRatio>=1.1?pct(buyRatio)+'% above average':'broadly stable')+'.';
+      act='Confirm whether elevated T12M DSO stems from a prior large invoice or structural slowdown. Review account aging bucket before next order approval.';
+    }
+  } else if(key==='21'){
+    ph='2026 YTD order pace '+(pct(1/buyRatio*-1+2))+'% below T12M avg — account is buying less than prior-year run-rate. '
+      +(ovd>ytdAvgOvd?'OVD '+ovd.toFixed(1)+'% above grade average adds further concern.':'OVD '+ovd.toFixed(1)+'% remains contained.');
+    act='Direct account visit to diagnose cause: (1) inventory overhang from prior period, (2) competitor switch, or (3) cash constraint. '
+      +'Recovery action differs by root cause — do not default to price concession without diagnosis.';
+  } else if(key==='13'){
+    ph='Seasonal stocking concealing a compounding AR problem — T12M shows DSO '+Math.round(dsoT)+'d AND OVD '+ovd.toFixed(1)+'% ('+ovdStr+') simultaneously elevated.';
+    act='Immediate Aging Bucket pull. '+(o3/Math.max(ovdAmt,1)>0.3?'60d+ overdue exceeds 30% — initiate Credit Hold discussion this week.':'Enforce overdue settlement as condition for next Sell-in approval.');
+  } else if(key==='31'){
+    ph='Strong 2026 order pace ('+pct(buyRatio)+'% above T12M avg) actively absorbing AR burden. OVD '+ovd.toFixed(1)+'% confirms healthy payment pattern.';
+    act='Maintain Sell-in cadence. Prioritise stock availability for this account ahead of peak season. No collection action required.';
+  } else if(key==='14'){
+    ph='New invoices settled promptly but prior-period balances lingering — selective payment behaviour emerging. OVD '+ovd.toFixed(1)+'% above grade baseline.';
+    act='Enforce old-before-new collection policy on next order. Link Sell-in approval to clearance of oldest outstanding invoice.';
+  } else if(key==='41'){
+    ph='Recent payment run-rate outpacing T12M overdue average — account self-correcting. OVD '+ovd.toFixed(1)+'% now below grade baseline.';
+    act='Reinforce positive behaviour with order fulfilment priority. Monitor for 2 consecutive months before considering grade upgrade.';
+  } else {
+    return FH_MOVE_INTERP[key]||'Quadrant shift';
+  }
+  return '<span style="color:#e2e8f0;">'+ph+'</span><br><span style="color:#38bdf8;font-weight:600;">▶ '+act+'</span>';
+}
+
+function _fhQuadrant(dso, ovd_rate, ovdThresh){
+  if(dso==null) return 3;
+  if(dso<=180&&ovd_rate<=ovdThresh) return 1;
+  if(dso>180&&ovd_rate<=ovdThresh) return 2;
+  if(dso>180&&ovd_rate>ovdThresh) return 3;
+  return 4;
+}
+
+function fhToggleCompare(){
+  _fhCompareMode=!_fhCompareMode;
+  var btn=document.getElementById('fhCompareBtn');
+  btn.style.background=_fhCompareMode?'#7c3aed':'#0f172a';
+  btn.style.color=_fhCompareMode?'#fff':'#64748b';
+  btn.style.border=_fhCompareMode?'none':'1px solid #334155';
+  renderFH();
+}
+
+function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleColor){
+  var normalPts=accts.filter(function(a){return a.x_simple!=null;});
+  var noRevPts=accts.filter(function(a){return a.no_rev&&a.x_simple==null&&a.bal>0;});
+  var selAvgDso=180;
+  var dsoVals=normalPts.map(function(a){return a.x_simple;});
+  var maxNormalDso=dsoVals.length?Math.max.apply(null,dsoVals):300;
+  var noRevX=(Math.max(maxNormalDso,180))*1.3+50;
+  noRevPts.forEach(function(a){a._chartX=noRevX;});
+  var pts=normalPts.concat(noRevPts);
+  var maxBal=pts.length?Math.max.apply(null,pts.map(function(a){return a.bal||1;})):1;
+  var gradeGroups={};
+  pts.forEach(function(a){ if(!gradeGroups[a.cls]) gradeGroups[a.cls]=[]; gradeGroups[a.cls].push(a); });
+  var datasets=[];
+  Object.keys(gradeGroups).forEach(function(cls){
+    var color=FH_GRADE_COLORS[cls]||'#94a3b8';
+    datasets.push({
+      label:cls,
+      data:gradeGroups[cls].map(function(a){
+        var xv=a.no_rev?a._chartX:a.x_simple;
+        return {x:xv,y:a.y_val,r:Math.max(5,Math.min(26,Math.sqrt(a.bal/maxBal)*36)),_a:a};
+      }),
+      backgroundColor:color+'99',borderColor:color,borderWidth:1.5
+    });
+  });
+  if(chartRef.ch){chartRef.ch.destroy();chartRef.ch=null;}
+  var wrap=document.getElementById(wrapId);
+  wrap.innerHTML='<canvas style="width:100%;height:100%;"></canvas>';
+  var ctx=wrap.querySelector('canvas').getContext('2d');
+  var qp={id:'qp_'+wrapId,beforeDraw:function(chart){
+    var c2=chart.ctx,xa=chart.scales.x,ya=chart.scales.y;
+    var x0=xa.getPixelForValue(selAvgDso),y0=ya.getPixelForValue(-avgOvd);
+    var l=xa.left,r2=xa.right,t=ya.top,b=ya.bottom;
+    c2.save();
+    c2.fillStyle='rgba(253,186,116,0.30)'; c2.fillRect(l,t,x0-l,y0-t);
+    c2.fillStyle='rgba(252,165,165,0.30)'; c2.fillRect(l,y0,x0-l,b-y0);
+    c2.fillStyle='rgba(134,239,172,0.30)'; c2.fillRect(x0,t,r2-x0,y0-t);
+    c2.fillStyle='rgba(253,224,71,0.30)';  c2.fillRect(x0,y0,r2-x0,b-y0);
+    c2.setLineDash([4,3]); c2.lineWidth=1.5; c2.strokeStyle='rgba(148,163,184,0.7)';
+    c2.beginPath(); c2.moveTo(x0,t); c2.lineTo(x0,b); c2.stroke();
+    c2.beginPath(); c2.moveTo(l,y0); c2.lineTo(r2,y0); c2.stroke();
+    c2.setLineDash([]);
+    c2.font='bold 9px sans-serif'; c2.globalAlpha=0.75; c2.fillStyle='#94a3b8';
+    c2.fillText('DPO 180d',x0+3,t+10);
+    c2.fillText('Avg '+avgOvd.toFixed(0)+'%',l+3,y0-3);
+    c2.globalAlpha=0.7; c2.font='bold 10px sans-serif';
+    c2.fillStyle='#fb923c'; c2.fillText('🔶',l+4,t+14);
+    c2.fillStyle='#ef4444'; c2.fillText('🔴',l+4,b-6);
+    c2.fillStyle='#10b981'; c2.fillText('✅',x0+4,t+14);
+    c2.fillStyle='#f59e0b'; c2.fillText('⚠',x0+4,b-6);
+    c2.restore();
+  }};
+  chartRef.ch=new Chart(ctx,{
+    type:'bubble',data:{datasets:datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{color:'#e2e8f0',font:{size:10}}},
+        datalabels:{display:false},
+        tooltip:{callbacks:{label:function(ctx){
+          var a=ctx.raw._a;
+          return [
+            a.name+' ('+a.cls+')',
+            'DSO: '+(a.x_simple!=null?a.x_simple.toFixed(1)+'d':'N/A')+'  OVD: '+a.ovd_rate.toFixed(1)+'%',
+            'AR: SAR '+(a.bal/1000).toFixed(0)+'K'
+          ];
+        }}}
+      },
+      scales:{
+        x:{reverse:true,
+          title:{display:true,text:'DSO Simple '+modeLabel+' (days)  |  ←Higher  Lower→',color:titleColor,font:{size:10}},
+          ticks:{color:'#94a3b8'},grid:{color:'#1e293b'},border:{color:'#475569'}},
+        y:{title:{display:true,text:'Overdue Rate (%)',color:'#94a3b8',font:{size:10}},
+          ticks:{color:'#94a3b8',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
+          grid:{color:'#1e293b'},border:{color:'#475569'}}
+      }
+    },
+    plugins:[qp]
+  });
+}
+
+function renderFHCompare(){
+  var savedRev=_fhRevMode;
+
+  // YTD
+  _fhRevMode='ytd'; _buildFhAmCache();
+  var ytdAccts=fhGetAccounts();
+  var ytdNorm=ytdAccts.filter(function(a){return a.x_simple!=null;});
+  var ytdAvgOvd=ytdNorm.length?ytdNorm.reduce(function(s,a){return s+a.ovd_rate;},0)/ytdNorm.length:20;
+
+  // T12M
+  _fhRevMode='t12m'; _buildFhAmCache();
+  var t12mAccts=fhGetAccounts();
+  var t12mNorm=t12mAccts.filter(function(a){return a.x_simple!=null;});
+  var t12mAvgOvd=t12mNorm.length?t12mNorm.reduce(function(s,a){return s+a.ovd_rate;},0)/t12mNorm.length:20;
+
+  // 복원
+  _fhRevMode=savedRev; _buildFhAmCache();
+
+  // 차트
+  var cY={ch:_fhCompChartY}, cT={ch:_fhCompChartT};
+  _renderCompareChart('fhCompareYtdWrap',ytdAccts,cY,ytdAvgOvd,'(YTD)','#60a5fa');
+  _renderCompareChart('fhCompareT12mWrap',t12mAccts,cT,t12mAvgOvd,'(T12M)','#a78bfa');
+  _fhCompChartY=cY.ch; _fhCompChartT=cT.ch;
+
+  // 이동 계정 맵핑 (YTD/T12M union — 한쪽에만 있는 계정도 포함)
+  var ytdMap={}, t12mMap={};
+  ytdAccts.forEach(function(a){ytdMap[a.id]=a;});
+  t12mAccts.forEach(function(a){t12mMap[a.id]=a;});
+  var _unionMap={};
+  Object.keys(ytdMap).forEach(function(k){_unionMap[k]=1;});
+  Object.keys(t12mMap).forEach(function(k){_unionMap[k]=1;});
+  var allSids=Object.keys(_unionMap);
+  var moves=[];
+  allSids.forEach(function(sid){
+    var ay=ytdMap[sid], at=t12mMap[sid];
+    if(!ay||!at) return;
+    var qY=_fhQuadrant(ay.x_simple,ay.ovd_rate,ytdAvgOvd);
+    var qT=_fhQuadrant(at.x_simple,at.ovd_rate,t12mAvgOvd);
+    if(qY!==qT) moves.push({a:ay,qY:qY,qT:qT,dsoY:ay.x_simple,dsoT:at.x_simple});
+  });
+  moves.sort(function(a,b){
+    var kA=a.qY+''+a.qT, kB=b.qY+''+b.qT;
+    if(kA!==kB) return kA<kB?-1:1;
+    // null DSO(no_rev)는 정렬 후순위로
+    var dA=(a.dsoY!=null&&a.dsoT!=null)?Math.abs(a.dsoT-a.dsoY):-Infinity;
+    var dB=(b.dsoY!=null&&b.dsoT!=null)?Math.abs(b.dsoT-b.dsoY):-Infinity;
+    return dB-dA;
+  });
+
+  document.getElementById('fhMoveCount').textContent=
+    '— '+moves.length+' shifts  |  OVD baseline  YTD '+ytdAvgOvd.toFixed(0)+'%  /  T12M '+t12mAvgOvd.toFixed(0)+'%';
+
+  var tbl=document.getElementById('fhMoveTable');
+  var th='<tr>'+['Account','Grade','YTD DSO','T12M DSO','Shift','Insight'].map(function(h){
+    return '<th style="padding:6px 8px;border-bottom:1px solid #334155;color:#64748b;font-weight:600;text-align:left;white-space:nowrap;">'+h+'</th>';
+  }).join('')+'</tr>';
+  var rows=moves.map(function(mv){
+    var interp=_fhDynamicInsight(mv, ytdAvgOvd);
+    var QN={1:'Safe',2:'Anomaly',3:'Critical',4:'Watch'};
+    var bY='<span style="padding:2px 7px;border-radius:4px;background:'+FH_Q_COLORS[mv.qY]+'22;color:'+FH_Q_COLORS[mv.qY]+';font-size:10px;font-weight:700;">'+QN[mv.qY]+'</span>';
+    var bT='<span style="padding:2px 7px;border-radius:4px;background:'+FH_Q_COLORS[mv.qT]+'22;color:'+FH_Q_COLORS[mv.qT]+';font-size:10px;font-weight:700;">'+QN[mv.qT]+'</span>';
+    var rowBg=mv.qY===1&&mv.qT===2?'background:rgba(249,115,22,0.07);':
+              mv.qY===2&&mv.qT===1?'background:rgba(16,185,129,0.07);':
+              mv.qY===1&&mv.qT===3?'background:rgba(239,68,68,0.10);':'';
+    var sid=mv.a.id, acctName=mv.a.name;
+    var hasAdv=_fhAdvisory&&_fhAdvisory.accounts&&_fhAdvisory.accounts[sid];
+    var advBadge=hasAdv
+      ? '<span style="margin-left:6px;padding:1px 6px;background:#7c3aed22;color:#a78bfa;font-size:9px;border-radius:3px;font-weight:700;">'+
+        (SIG_ICON[_fhAdvisory.accounts[sid].signal]||'')+'Advisory</span>'
+      : '<span style="margin-left:6px;padding:1px 6px;background:#334155;color:#475569;font-size:9px;border-radius:3px;">Advisory</span>';
+    var rowClick='onclick="fhShowAdvisory(\''+sid+'\',\''+acctName.replace(/'/g,"\\'")+'\')"';
+    return '<tr '+rowClick+' style="'+rowBg+'border-bottom:1px solid #1e293b;cursor:pointer;" onmouseover="this.style.background=\'rgba(124,58,237,0.05)\'" onmouseout="this.style.background=\''+rowBg.replace('background:','').replace(';','').trim()+'\'">'+
+      '<td style="padding:6px 8px;color:#e2e8f0;">'+mv.a.name+advBadge+'</td>'+
+      '<td style="padding:6px 8px;"><span style="color:'+FH_GRADE_COLORS[mv.a.cls]+';font-weight:600;">'+mv.a.cls+'</span></td>'+
+      '<td style="padding:6px 8px;color:#94a3b8;font-family:monospace;">'+(mv.dsoY!=null?mv.dsoY.toFixed(0)+'d':'N/A')+'</td>'+
+      '<td style="padding:6px 8px;color:#94a3b8;font-family:monospace;">'+(mv.dsoT!=null?mv.dsoT.toFixed(0)+'d':'N/A')+'</td>'+
+      '<td style="padding:6px 8px;">'+bY+' → '+bT+'</td>'+
+      '<td style="padding:8px 10px;font-size:10px;line-height:1.6;min-width:320px;max-width:480px;">'+interp+'</td>'+
+      '</tr>';
+  });
+  tbl.innerHTML='<thead>'+th+'</thead><tbody>'+(rows.length?rows.join(''):'<tr><td colspan="6" style="padding:16px;text-align:center;color:#64748b;">No quadrant shifts — YTD and T12M produce identical positioning</td></tr>')+'</tbody>';
+}
+
 function renderFH(){
   if(!RAW) return;
   fhLoadHistory(function(hist){
@@ -2091,10 +2659,18 @@ function renderFH(){
         sel.appendChild(opt);
       });
     }
+    // 비교 모드 / 일반 모드 전환
+    document.getElementById('fhChartBox').style.display=_fhCompareMode?'none':'';
+    document.getElementById('fhTableBox').style.display=_fhCompareMode?'none':'';
+    document.getElementById('fhCompareWrap').style.display=_fhCompareMode?'':'none';
     _buildFhAmCache();
     fhBuildGradeFilter();
     var accts=fhGetAccounts();
     renderFHKpi(accts);
+    if(_fhCompareMode){ setTimeout(function(){ renderFHCompare(); },50); return; }
+    // 일반 뷰 진입 시 비교 차트 인스턴스 정리
+    if(_fhCompChartY){_fhCompChartY.destroy();_fhCompChartY=null;}
+    if(_fhCompChartT){_fhCompChartT.destroy();_fhCompChartT=null;}
     renderFHChart(accts);
     renderFHTable(_fhSelAccount?accts.filter(function(a){return a.id===_fhSelAccount;}):accts);
   });
@@ -2104,11 +2680,12 @@ function _buildFhAmCache(){
   if(!RAW) return;
   window._fhAmCache={};
   var ar=fhGetArData();
-  var _dDays=calcDaysYtd();
   // 현재 연도: txn 최대 연도 (data.json 갱신 시 자동 반영)
   var _curY=0;
   RAW.txn.forEach(function(t){ if(t[C.Y]>_curY) _curY=t[C.Y]; });
   if(!_curY) _curY=new Date().getFullYear();
+  _fhCurY=_curY;
+  var _dDays=calcDaysYtd();
   // T12M 기간: sell_thru_date 기준 정확히 365일 전 ~ 오늘 (일 단위 슬라이드)
   var _sdStr=(RAW.sell_thru_date||'01-01'); // "MM-DD"
   var _t12EndDate=_curY+'-'+_sdStr;          // "2026-05-05"
@@ -2116,7 +2693,7 @@ function _buildFhAmCache(){
   var v26Map={}, t12mMap={};
   RAW.txn.forEach(function(t){
     var sid=String(int_id(t[C.ID]));
-    if(t[C.Y]===_curY) v26Map[sid]=(v26Map[sid]||0)+(t[C.VL]||0);
+    if(t[C.Y]===_curY&&(!t[C.DY]||t[C.DY]<=_t12EndDate)) v26Map[sid]=(v26Map[sid]||0)+(t[C.VL]||0);
     var dy=t[C.DY];
     if(dy&&dy>=_t12StDate&&dy<=_t12EndDate) t12mMap[sid]=(t12mMap[sid]||0)+(t[C.VL]||0);
   });
@@ -2144,7 +2721,6 @@ function renderFHKpi(accts){
   var avgDso=(_fhDsoMode==='simple')
     ?(totBal>0&&totRev>0?totBal/totRev*_dDays:0)
     :(function(){var s=0,c=0;accts.forEach(function(a){var d=a.dso_aged;if(d!=null){s+=d;c++;}});return c?s/c:0;})();
-  var ovdPct=totBal>0?(totOvd/totBal*100):0;
   var ovdPct=totBal>0?(totOvd/totBal*100):0;
   var fmt2=function(v){return v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0);};
   var dateLabel=_fhSelDate==='latest'?((RAW.ar&&RAW.ar.current)?RAW.ar.current.date:'Latest'):_fhSelDate;
@@ -2257,69 +2833,100 @@ function renderFHChart(accts){
         }
       },
       plugins:{
-        legend:{labels:{color:'#94a3b8',font:{size:11}}},
+        legend:{labels:{color:'#e2e8f0',font:{size:11}}},
         datalabels:{
           display:function(ctx){
             var a=ctx.dataset.data[ctx.dataIndex]._a;
             return ['A+','A','B'].includes(a.cls)||ctx.dataset.data[ctx.dataIndex].r>18;
           },
           formatter:function(val){return val._a.name.split(' ').slice(0,2).join(' ');},
-          color:'#e2e8f0',font:{size:9},align:'top',offset:4,
+          color:'#ffffff',font:{size:9},align:'top',offset:4,
         },
         tooltip:{callbacks:{label:function(ctx){
           var a=ctx.raw._a;
           var xv=ctx.raw.x;
           var dso=_fhDsoMode==='simple'?a.dso_simple:a.dso_aged;
           return [a.name+' ('+a.cls+')'+(a.no_rev?' ⚠ No Revenue':''),
-            a.no_rev?'DSO: N/A ('+(_fhRevMode==='t12m'?'T12M':'2026')+' 매출 없음/마이너스) → Critical 강제배치'
-              :'DSO: '+(dso!=null?dso.toFixed(1):'?')+'d  |  DPO 기준 180d  '+(dso!=null&&dso<=180?'✅회수완료':'🔴미회수'),
-            'Overdue Rate: '+a.ovd_rate.toFixed(1)+'%  |  등급평균 '+selAvgOvd.toFixed(0)+'%  '+(a.ovd_rate<=selAvgOvd?'✅':'🔴초과'),
+            a.no_rev?'DSO: N/A ('+(_fhRevMode==='t12m'?'T12M':String(_fhCurY))+' revenue absent/negative) → Forced to Critical'
+              :'DSO: '+(dso!=null?dso.toFixed(1):'?')+'d  |  DPO 180d  '+(dso!=null&&dso<=180?'✅Within terms':'🔴Outstanding'),
+            'Overdue Rate: '+a.ovd_rate.toFixed(1)+'%  |  Selected avg '+selAvgOvd.toFixed(0)+'%  '+(a.ovd_rate<=selAvgOvd?'✅':'🔴Above avg'),
             'AR Balance: SAR '+(a.bal/1000).toFixed(0)+'K',
             'Overdue: SAR '+(a.ovd/1000).toFixed(0)+'K'];
         }}}
       },
       scales:{
-        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  기준선: DPO 180d  ←높음  낮음→',color:'#64748b',font:{size:11}},
-          ticks:{color:'#64748b',callback:function(v){return v.toFixed(0)+'d';}},
+        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  Baseline: DPO 180d  ←Higher  Lower→',color:'#94a3b8',font:{size:11}},
+          ticks:{color:'#94a3b8',callback:function(v){return v.toFixed(0)+'d';}},
           grid:{color:'#1e293b'},border:{color:'#475569'}},
-        y:{title:{display:true,text:'← Overdue Rate 높음  |  낮음 → (기준선: 선택 계정 평균)',color:'#64748b',font:{size:11}},
-          ticks:{color:'#64748b',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
+        y:{title:{display:true,text:'← Higher Overdue Rate  |  Lower → (Baseline: selected acct avg)',color:'#94a3b8',font:{size:11}},
+          ticks:{color:'#94a3b8',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
           grid:{color:'#1e293b'},border:{color:'#475569'}}
       }
     },
     plugins:[quadrantPlugin]
   });
-  document.getElementById('fhChartSubtitle').textContent='('+pts.length+'개 계정)';
+  document.getElementById('fhChartSubtitle').textContent='('+pts.length+' accounts)';
+}
+
+function fhTableSort(col){
+  if(_fhSortCol===col) _fhSortDir=_fhSortDir==='asc'?'desc':'asc';
+  else{_fhSortCol=col;_fhSortDir='asc';}
+  renderFHTable(_fhSelAccount?fhGetAccounts().filter(function(a){return a.id===_fhSelAccount;}):fhGetAccounts());
 }
 
 function renderFHTable(accts){
   var xKey=_fhDsoMode==='simple'?'x_simple':'x_aged';
   var dsoLabel=_fhDsoMode==='simple'?'DSO Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'DSO Aged';
-  var thS='padding:6px 8px;text-align:right;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;';
-  var thSL='padding:6px 8px;text-align:left;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;';
+  var GRD_ORDER={'A+':0,'A':1,'B':2,'C':3,'D':4,'':5};
+  var QUAD_ORDER={'Safe':0,'Anomaly':1,'Watch':2,'Critical':3,'':4};
+
+  // 헤더 스타일 공통 함수
+  function th(col, label, align){
+    var isActive=_fhSortCol===col;
+    var arrow=isActive?(_fhSortDir==='asc'?' ▲':' ▼'):'';
+    var base='padding:6px 8px;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;cursor:pointer;user-select:none;';
+    var color=isActive?'color:#60a5fa;':'color:#64748b;';
+    var align_s='text-align:'+(align||'right')+';';
+    return '<th style="'+base+color+align_s+'" onclick="fhTableSort(\''+col+'\')">'+label+arrow+'</th>';
+  }
+
   var h='<thead><tr>'
-    +'<th style="'+thSL+'">Account</th>'
-    +'<th style="'+thS+'">Grade</th>'
-    +'<th style="'+thS+'">Credit Term</th>'
-    +'<th style="'+thS+'">Credit Limit</th>'
-    +'<th style="'+thS+'">AR Balance</th>'
-    +'<th style="'+thS+'">Overdue</th>'
-    +'<th style="'+thS+'">OVD Rate</th>'
-    +'<th style="'+thS+'">OVD 0-30</th>'
-    +'<th style="'+thS+'">OVD 30-60</th>'
-    +'<th style="'+thS+'">OVD 60+</th>'
-    +'<th style="'+thS+'">'+dsoLabel+'</th>'
-    +'<th style="'+thS+'">vs DPO 180d</th>'
-    +'<th style="'+thS+'">Quadrant</th>'
+    +th('name',     'Account',      'left')
+    +th('cls',      'Grade')
+    +th('pt',       'Credit Term')
+    +th('cl',       'Credit Limit')
+    +th('bal',      'AR Balance')
+    +th('ovd',      'Overdue')
+    +th('ovd_rate', 'OVD Rate')
+    +th('o1',       'OVD 0-30')
+    +th('o2',       'OVD 30-60')
+    +th('o3',       'OVD 60+')
+    +th('dso',      dsoLabel)
+    +th('vs180',    'vs DPO 180d')
+    +th('quad',     'Quadrant')
+    +'<th style="padding:6px 8px;text-align:right;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;">Advisory</th>'
     +'</tr></thead><tbody>';
+
   // Y 기준선: 테이블 계정 평균 OVD Rate
   var tblOvdVals=accts.filter(function(a){return a.bal>0;}).map(function(a){return a.ovd_rate;});
   var tblAvgOvd=tblOvdVals.length?tblOvdVals.reduce(function(a,b){return a+b;},0)/tblOvdVals.length:20;
-  // no_rev 계정은 맨 앞(가장 위험)에 정렬
+
+  // 정렬
   var sorted=accts.slice().sort(function(a,b){
-    if(a.no_rev&&!b.no_rev) return -1;
-    if(!a.no_rev&&b.no_rev) return 1;
-    return (a[xKey]||999)-(b[xKey]||999);
+    var col=_fhSortCol, dir=_fhSortDir==='asc'?1:-1;
+    if(!col){
+      // 기본: no_rev 먼저, 이후 DSO 오름차순
+      if(a.no_rev&&!b.no_rev) return -1;
+      if(!a.no_rev&&b.no_rev) return 1;
+      return (a[xKey]||999)-(b[xKey]||999);
+    }
+    var av, bv;
+    if(col==='name'){ av=a.name||''; bv=b.name||''; return dir*(av<bv?-1:av>bv?1:0); }
+    if(col==='cls'){  av=GRD_ORDER[a.cls]??5; bv=GRD_ORDER[b.cls]??5; return dir*(av-bv); }
+    if(col==='dso'){  av=a[xKey]??9999; bv=b[xKey]??9999; return dir*(av-bv); }
+    if(col==='vs180'){av=a[xKey]!=null?a[xKey]-180:9999; bv=b[xKey]!=null?b[xKey]-180:9999; return dir*(av-bv); }
+    if(col==='quad'){ av=a.no_rev?4:(a[xKey]>180&&a.ovd_rate>tblAvgOvd?3:a[xKey]>180?1:a.ovd_rate>tblAvgOvd?2:0); bv=b.no_rev?4:(b[xKey]>180&&b.ovd_rate>tblAvgOvd?3:b[xKey]>180?1:b.ovd_rate>tblAvgOvd?2:0); return dir*(av-bv); }
+    av=a[col]??0; bv=b[col]??0; return dir*(av-bv);
   });
   var fmtN=function(v){return v>=1000000?(v/1000000).toFixed(2)+'M':v>=1000?(v/1000).toFixed(1)+'K':v.toFixed(0);};
   sorted.forEach(function(a){
@@ -2344,6 +2951,7 @@ function renderFHTable(accts){
       ?'<span style="color:#ef4444;font-size:10px;">No Revenue</span>'
       :(x!=null?(x-180>=0?'+':'')+(x-180).toFixed(1)+'d':'-');
     var criticalQuad='<span style="color:#ef4444;font-weight:600;">Critical</span>';
+    var advBtn='<button onclick="event.stopPropagation();fhShowAdvisory(\''+a.id+'\',\''+a.name.replace(/'/g,"\\'")+'\')" style="padding:2px 8px;background:#1e1b4b;color:#a78bfa;border:1px solid #4c1d95;border-radius:4px;cursor:pointer;font-size:9px;white-space:nowrap;">Advisory</button>';
     h+='<tr style="cursor:pointer;'+rowBg+'" onclick="fhRowClick(\''+a.id+'\')">'
       +'<td style="'+tdSL+'">'+(a.no_rev?'<span style="color:#ef4444;font-size:10px;margin-right:3px;">⚠</span>':'')+a.name+'</td>'
       +'<td style="'+tdS+'"><span style="color:'+clsColor+';font-weight:700;">'+a.cls+'</span></td>'
@@ -2358,6 +2966,7 @@ function renderFHTable(accts){
       +'<td style="'+tdS+'color:#2dd4bf;">'+dsoCell+'</td>'
       +'<td style="'+tdS+'color:'+xColor+';">'+vsAvgCell+'</td>'
       +'<td style="'+tdS+'">'+(a.no_rev?criticalQuad:quad)+'</td>'
+      +'<td style="'+tdS+'">'+advBtn+'</td>'
       +'</tr>';
   });
   h+='</tbody>';
@@ -2381,6 +2990,9 @@ function fhClearSelection(){
 }
 
 function fhReset(){
+  _fhCompareMode=false;
+  var cbtn=document.getElementById('fhCompareBtn');
+  if(cbtn){cbtn.style.background='#0f172a';cbtn.style.color='#64748b';cbtn.style.border='1px solid #334155';}
   _fhSelGrades=new Set(['A+']);
   _fhSelAccount=null;
   _fhSelDate='latest';
@@ -2460,11 +3072,11 @@ function fhShowTrend(accountId, accountName){
       type:'line',
       data:{labels:dates,datasets:[{label:'OVD Rate %',data:ovdRates,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},
-        scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},
-          y:{ticks:{color:'#64748b',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'#1e293b'}}}}
+        scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},
+          y:{ticks:{color:'#94a3b8',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'#1e293b'}}}}
     }));
 
-    // AR Balance vs Overdue 차트
+    // AR Balance vs Overdue chart
     var w2=document.getElementById('fhTrendChartBalWrap');
     w2.innerHTML='<canvas id="fhTrendBal"></canvas>';
     _fhTrendCharts.push(new Chart(document.getElementById('fhTrendBal').getContext('2d'),{
@@ -2473,9 +3085,9 @@ function fhShowTrend(accountId, accountName){
         {label:'AR Bal (K)',data:bals,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
         {label:'Overdue (K)',data:ovds,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3}
       ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false}},
-        scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},
-          y:{ticks:{color:'#64748b',font:{size:9},callback:function(v){return v+'K';}},grid:{color:'#1e293b'}}}}
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10}}},datalabels:{display:false}},
+        scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},
+          y:{ticks:{color:'#94a3b8',font:{size:9},callback:function(v){return v+'K';}},grid:{color:'#1e293b'}}}}
     }));
   });
 }
