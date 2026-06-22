@@ -416,7 +416,7 @@ var _rsmStore={
   value:(function(){try{return JSON.parse(localStorage.getItem('stp_rsm_fcst_val_v1')||'{}');}catch(e){return{};}})(),
   qty:(function(){try{return JSON.parse(localStorage.getItem('stp_rsm_fcst_qty_v1')||'{}');}catch(e){return{};}})()
 };
-function _rsmGet(id){return (_rsmStore[mode]||_rsmStore.value)[String(id)]||0;}
+function _rsmGet(id){var base=(_rsmStore[mode]||_rsmStore.value)[String(id)]||0;if(isCatFiltered()&&typeof RAW!=='undefined'&&RAW&&RAW.rsm_fcst&&RAW.rsm_fcst.by_cat){var bc=RAW.rsm_fcst.by_cat[String(id)];if(bc){var t=0;Object.keys(bc).forEach(function(c){if(SEL.cat.has(c))t+=(mode==='qty'?(bc[c].q||0):(bc[c].v||0));});return t;}}return base;}
 function _rsmSet(id,val){var s=_rsmStore[mode]||_rsmStore.value;s[String(id)]=val;try{localStorage.setItem(_RSM_KEYS[mode]||_RSM_KEYS.value,JSON.stringify(s));localStorage.setItem(_RSM_LOCAL_TS_KEY,Date.now().toString());}catch(e){}}
 // ======== RSM FCST Cloud Sync (GitHub API — cross-device auto-sync) ========
 var _RSM_REPO='perfectjjong/Sell-Thru-Progress-Dashboard';
