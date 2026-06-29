@@ -553,6 +553,17 @@ function getOudVal(acct, isVal){
   });
   return total;
 }
+// PGI/Remain/Open snapshot value honoring category filter (same pattern as getOudVal).
+// Without this the table summed full account q while KPI cards summed selected categories → mismatch under category/compressor filter.
+function getProVal(acct, isVal){
+  if(!acct) return 0;
+  if(!isCatFiltered() || !acct.c) return (isVal ? acct.v : acct.q) || 0;
+  var total=0;
+  Object.keys(acct.c).forEach(function(cat){
+    if(SEL.cat.has(cat)) total += (isVal ? acct.c[cat].v : acct.c[cat].q) || 0;
+  });
+  return total;
+}
 
 // ======== FILTER ENGINE ========
 function passFilter(r){
@@ -1340,15 +1351,15 @@ function renderTopTable(){
     if(!cur||!cur.accts) return;
     Object.keys(cur.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
-      if(am[nid]){ am[nid][vKey]=cur.accts[id].v||0; am[nid][qKey]=cur.accts[id].q||0; }
+      if(am[nid]){ am[nid][vKey]=getProVal(cur.accts[id],true); am[nid][qKey]=getProVal(cur.accts[id],false); }
     });
     var prev=_proPrev(raw);
     if(prev&&prev.accts){
       Object.keys(am).forEach(function(nid){
         var sid=String(nid);
         var cv=am[nid][vKey]||0, cq=am[nid][qKey]||0;
-        var pv=prev.accts[sid]?(prev.accts[sid].v||0):0;
-        var pq=prev.accts[sid]?(prev.accts[sid].q||0):0;
+        var pv=prev.accts[sid]?getProVal(prev.accts[sid],true):0;
+        var pq=prev.accts[sid]?getProVal(prev.accts[sid],false):0;
         am[nid][dvKey]=cv-pv;
         am[nid][dqKey]=cq-pq;
       });
