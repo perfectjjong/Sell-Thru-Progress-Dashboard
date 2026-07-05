@@ -845,7 +845,7 @@ function renderKPI(){
       var g25=v25?((val-v25)/v25*100):null, g24=v24?((val-v24)/v24*100):null;
       // RSM FCST total from bottom table (linked to renderTopTable)
       var rsmTotal=_tblRsmTotal;
-      var achRate=(isVal&&rsmTotal)?(val/rsmTotal*100):null;
+      var achRate=(rsmTotal)?(val/rsmTotal*100):null;
       // Period label for badge context
       var periodLabel=(dayFrom&&dayTo&&(dayFrom!=='01-01'||dayTo!=='12-31'))?(dayFrom+'~'+dayTo):'';
       // Render growth + achievement row
@@ -862,14 +862,14 @@ function renderKPI(){
       h+=badge('vs 2025',g25)+badge('vs 2024',g24)+badge('vs FCST',achRate,achC);
       h+='</div>';
       h+=renderPgiSubCards(isVal,lb);
-      // RSM FCST block with team breakdown (Value mode only)
-      if(isVal){
+      // RSM FCST block with team breakdown (Value + Qty 모두 표시 — 2026-07-05 형님 지시)
+      if(true){
         h+='<div style="margin-top:8px;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #3b82f6;">';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
         h+='<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.5px;">RSM FCST</div>';
         h+='<div style="font-size:16px;font-weight:700;color:#60a5fa;">'+(rsmTotal?fmt(rsmTotal):'\u2014')+'</div>';
         h+='</div>';
-        if(rsmTotal) h+='<div style="font-size:10px;color:#475569;margin-bottom:6px;">'+fmtF(rsmTotal)+' SAR</div>';
+        if(rsmTotal) h+='<div style="font-size:10px;color:#475569;margin-bottom:6px;">'+fmtF(rsmTotal)+' '+(isVal?'SAR':'Units')+'</div>';
         var tmOrder=['OR','OR_Others','IR','IR_Others','Showrooms','SME'];
         var btm=_tblRsmByTeam;
         var tmKeys=Object.keys(btm).sort(function(a,b){var ia=tmOrder.indexOf(a),ib=tmOrder.indexOf(b);ia=ia<0?99:ia;ib=ib<0?99:ib;return ia-ib;});
