@@ -807,6 +807,7 @@ function switchMode(m){
 function fmt(n){if(n==null)return'-';if(Math.abs(n)>=1e6)return(n/1e6).toFixed(1)+'M';if(Math.abs(n)>=1e3)return(n/1e3).toFixed(1)+'K';return Math.round(n).toLocaleString();}
 function fmtF(n){return n?Math.round(n).toLocaleString('en-US'):'0';}
 function gv(r){return mode==='value'?r[C.VL]:r[C.QT];}
+var VAT=1.15; // AR 잔액은 VAT 포함, Sell-Thru 매출(VL)은 net → DSO 분모는 매출×VAT로 동일 기준
 function calcDaysYtd(){
   var yr=_fhCurY||new Date().getFullYear();
   var sd=RAW?RAW.sell_thru_date||'05-02':'05-02';
@@ -1107,10 +1108,10 @@ function renderDsoKPI(){
     tRev+=r[C.VL];
   });
   var days=calcDaysYtd();
-  var sDso=(tBal>0&&tRev>0)?(tBal/tRev*days):null;
+  var sDso=(tBal>0&&tRev>0)?(tBal/(tRev*VAT)*days):null;
   var aDso=calcAgedDso(tBal,tOvd,tO1,tO2,tO3);
   var fd=function(v){return v!=null?v.toFixed(1)+'d':'N/A';};
-  g.innerHTML='<div class="dso-card"><div class="dso-label">DSO — Simple ('+AR_SNAP.date+')</div><div class="dso-val">'+fd(sDso)+'</div><div class="dso-sub">AR '+fmt(tBal)+' \xF7 YTD Rev '+fmt(tRev)+' \xD7 '+days+'d</div></div>'
+  g.innerHTML='<div class="dso-card"><div class="dso-label">DSO — Simple ('+AR_SNAP.date+')</div><div class="dso-val">'+fd(sDso)+'</div><div class="dso-sub">AR '+fmt(tBal)+' \xF7 (YTD Rev '+fmt(tRev)+' \xD71.15 VAT) \xD7 '+days+'d</div></div>'
              +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">Not Due\xD715 + OVD0-30\xD715 + OVD30-60\xD745 + OVD60+\xD790 (days)</div></div>';
 }
 
@@ -1465,7 +1466,7 @@ function renderTopTable(){
   Object.keys(am).forEach(function(nid){
     var a=am[nid];
     a.v26_ytd=_v26YtdMap[+nid]||_v26YtdMap[nid]||0;
-    a.dso_simple=(a.ar_bal>0&&a.v26_ytd>0)?(a.ar_bal/a.v26_ytd*_dDays):null;
+    a.dso_simple=(a.ar_bal>0&&a.v26_ytd>0)?(a.ar_bal/(a.v26_ytd*VAT)*_dDays):null;
     a.dso_aged=(a.ar_bal>0)?calcAgedDso(a.ar_bal,a.ar_ovd,a.ar_o1,a.ar_o2,a.ar_o3):null;
   });
   // Update AR Only count
@@ -1701,7 +1702,7 @@ function buildTable(arr){
     h+='<td '+tfN+'color:#8b5cf6;" data-col="col_ytd">'+fmtF(tot.col_ytd)+'</td>';
   }
   if(hasAr){
-    var _ftSD=(tot.ar_bal>0&&tot.v26_ytd>0)?(tot.ar_bal/tot.v26_ytd*calcDaysYtd()):null;
+    var _ftSD=(tot.ar_bal>0&&tot.v26_ytd>0)?(tot.ar_bal/(tot.v26_ytd*VAT)*calcDaysYtd()):null;
     var _ftAD=calcAgedDso(tot.ar_bal,tot.ar_ovd,tot.ar_o1,tot.ar_o2,tot.ar_o3);
     h+='<td class="num" style="'+tfS+'color:#14b8a6;">'+(_ftSD!=null?_ftSD.toFixed(1):'-')+'</td>';
     h+='<td class="num" style="'+tfS+'color:#2dd4bf;">'+(_ftAD!=null?_ftAD.toFixed(1):'-')+'</td>';
@@ -2712,8 +2713,8 @@ function _buildFhAmCache(){
     var a=ar[sid];
     var v26=v26Map[sid]||0, t12m=t12mMap[sid]||0;
     var bal=a.bal||0, ovd=a.ovd||0, o1=a.o1||0, o2=a.o2||0, o3=a.o3||0;
-    var dso_ytd=(bal>0&&v26>0)?(bal/v26*_dDays):null;
-    var dso_t12m=(bal>0&&t12m>0)?(bal/t12m*365):null;
+    var dso_ytd=(bal>0&&v26>0)?(bal/(v26*VAT)*_dDays):null;
+    var dso_t12m=(bal>0&&t12m>0)?(bal/(t12m*VAT)*365):null;
     var dso_s=_fhRevMode==='t12m'?dso_t12m:dso_ytd;
     var dso_a=bal>0?calcAgedDso(bal,ovd,o1,o2,o3):null;
     window._fhAmCache[sid]={dso_simple:dso_s, dso_aged:dso_a, v26:v26, t12m:t12m};
@@ -2730,7 +2731,7 @@ function renderFHKpi(accts){
   });
   var _dDays=_fhRevMode==='t12m'?365:calcDaysYtd();
   var avgDso=(_fhDsoMode==='simple')
-    ?(totBal>0&&totRev>0?totBal/totRev*_dDays:0)
+    ?(totBal>0&&totRev>0?totBal/(totRev*VAT)*_dDays:0)
     :(function(){var s=0,c=0;accts.forEach(function(a){var d=a.dso_aged;if(d!=null){s+=d;c++;}});return c?s/c:0;})();
   var ovdPct=totBal>0?(totOvd/totBal*100):0;
   var fmt2=function(v){return v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0);};
