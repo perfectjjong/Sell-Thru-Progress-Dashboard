@@ -1260,6 +1260,10 @@ var _arMode='all'; // 'all' | 'sell' | 'ar'
 function renderTopTable(){
   // Use passFilterExceptYear so all years show in same-period comparison (Year filter applies to KPI cards)
   var data=RAW.txn.filter(passFilterExceptYear), am={};
+  // master lookup for accounts with a known team but zero sell-thru history (e.g. merged sub-IDs
+  // like Al Manea 1110000001/1110000003) — used by AR/Collection merge below so they get their
+  // real team instead of being mislabeled "AR Only" and leaking past the Team filter
+  var masterMap={}; (RAW.master||[]).forEach(function(m){masterMap[m.id]=m;});
   // Sell-Thru aggregation
   data.forEach(function(r){
     var id=r[C.ID],yr=r[C.Y];
@@ -1378,8 +1382,18 @@ function renderTopTable(){
         // Account in filtered sell-thru → merge AR data
         am[nid].ar_cl=a.cl||0; am[nid].ar_bal=a.bal||0; am[nid].ar_ovd=a.ovd||0;
         am[nid].ar_o1=a.o1||0; am[nid].ar_o2=a.o2||0; am[nid].ar_o3=a.o3||0;
+      } else if(masterMap[nid] && masterMap[nid].team){
+        // Known team in master (e.g. merged sub-ID with zero sell-thru, like Al Manea 구ID) →
+        // use the real team so it respects the Team filter, instead of a blanket "AR Only" label
+        var mmA=masterMap[nid], tmA=mmA.team, stA=mmA.status||'-';
+        if(!SEL.team.has(tmA)||!SEL.div.has(getDiv(tmA))||!SEL.status.has(stA)||!SEL.cls.has(CLS_MAP[String(nid)]||'Unclassified')) return;
+        am[nid]={id:nid,nm:a.nm||mmA.name||'',tm:tmA,st:stA,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
+                 pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
+                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
+                 ar_cl:a.cl||0,ar_bal:a.bal||0,ar_ovd:a.ovd||0,ar_o1:a.o1||0,ar_o2:a.o2||0,ar_o3:a.o3||0,
+                 col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
       } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
-        // Truly AR-only: no sell-thru history at all → add as "AR Only"
+        // Truly AR-only: no sell-thru history at all, no master team either → add as "AR Only"
         // Respects div filter: 'AR Only' maps to Others division → only show when Others is selected
         am[nid]={id:nid,nm:a.nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
@@ -1397,8 +1411,17 @@ function renderTopTable(){
       if(am[nid]){
         am[nid].col_mtd=COL_SNAP.accts[id].mtd||0;
         am[nid].col_ytd=COL_SNAP.accts[id].ytd||0;
+      } else if(masterMap[nid] && masterMap[nid].team){
+        // Known team in master (e.g. merged sub-ID with zero sell-thru, like Al Manea 구ID) →
+        // use the real team so it respects the Team filter, instead of a blanket "AR Only" label
+        var mmC=masterMap[nid], tmC=mmC.team, stC=mmC.status||'-';
+        if(!SEL.team.has(tmC)||!SEL.div.has(getDiv(tmC))||!SEL.status.has(stC)||!SEL.cls.has(CLS_MAP[String(nid)]||'Unclassified')) return;
+        am[nid]={id:nid,nm:COL_SNAP.accts[id].nm||mmC.name||'',tm:tmC,st:stC,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
+                 pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
+                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,
+                 col_mtd:COL_SNAP.accts[id].mtd||0,col_ytd:COL_SNAP.accts[id].ytd||0,mar_tq:0,mar_tv:0};
       } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
-        // Truly collection-only: no sell-thru history
+        // Truly collection-only: no sell-thru history, no master team either
         // Respects div filter: maps to Others division
         am[nid]={id:nid,nm:COL_SNAP.accts[id].nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
