@@ -115,6 +115,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f
 .chart-box{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
 .chart-box h3{font-size:13px;color:#94a3b8;margin-bottom:12px;font-weight:500}
 .chart-box canvas{max-height:300px}
+.chart-box-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.chart-box-hdr h3{margin-bottom:0}
+.div-toggle{display:flex;gap:0}
+.div-toggle-btn{padding:3px 9px;border:1px solid #334155;border-left:none;cursor:pointer;font-weight:600;background:#1e293b;color:#64748b;font-size:10px}
+.div-toggle-btn:first-child{border-left:1px solid #334155;border-radius:6px 0 0 6px}
+.div-toggle-btn:last-child{border-radius:0 6px 6px 0}
+.div-toggle-btn.active{background:#3b82f6;color:#fff}
 .full-width{grid-column:1/-1}
 
 /* ===== Tables ===== */
@@ -191,8 +198,8 @@ tfoot .fz{background:#0f172a}
 <!-- Charts -->
 <div class="chart-grid">
   <div class="chart-box full-width"><h3>Monthly Trend</h3><canvas id="monthlyChart"></canvas></div>
-  <div class="chart-box"><h3>By Team</h3><canvas id="teamChart"></canvas></div>
-  <div class="chart-box"><h3>By Category</h3><canvas id="catChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>By Team</h3><div class="div-toggle" id="divToggleTeam"></div></div><canvas id="teamChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>By Category</h3><div class="div-toggle" id="divToggleCat"></div></div><canvas id="catChart"></canvas></div>
   <div class="chart-box"><h3>Account Status Distribution</h3><canvas id="statusChart"></canvas></div>
   <div class="chart-box"><h3>YoY Growth by Team</h3><canvas id="growthChart"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
@@ -1160,8 +1167,65 @@ function renderMonthly(){
   charts['monthly']=new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:true}},scales:{x:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
+// ======== IN-CHART DIVISION TOGGLE (By Team / By Category) ========
+// Shares SEL.div with the master filter bar, so toggling here or up top
+// stays in sync both ways (buildFilterBar() re-reads SEL.div on every renderAll()).
+function renderDivToggle(elId){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  el.innerHTML='';
+  var opts=DIV_ORDER.filter(function(v){return ALL.div.has(v);});
+  function mkBtn(label,isActive,onClick){
+    var b=document.createElement('button');
+    b.className='div-toggle-btn'+(isActive?' active':'');
+    b.textContent=label;
+    b.onclick=onClick;
+    return b;
+  }
+  el.appendChild(mkBtn('All',SEL.div.size===ALL.div.size,function(){
+    SEL.div=new Set(ALL.div); renderAll();
+  }));
+  opts.forEach(function(v){
+    el.appendChild(mkBtn(v,SEL.div.has(v),function(){
+      if(SEL.div.has(v)){ SEL.div.delete(v); if(SEL.div.size===0) SEL.div.add(v); }
+      else SEL.div.add(v);
+      renderAll();
+    }));
+  });
+}
+
+// ======== IN-CHART TEAM TOGGLE (By Team = B2C teams only) ========
+// Shows only the B2C-division teams (OR/OR_Others/IR/IR_Others/SME) as quick
+// filters. Shares SEL.team with the master Team filter, so it's a real filter
+// (affects KPIs/table/every chart), not just a local chart view.
+function renderTeamToggle(elId){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  el.innerHTML='';
+  var b2cTeams=[...ALL.team].filter(function(t){return getDiv(t)==='B2C';}).sort();
+  function mkBtn(label,isActive,onClick){
+    var b=document.createElement('button');
+    b.className='div-toggle-btn'+(isActive?' active':'');
+    b.textContent=label;
+    b.onclick=onClick;
+    return b;
+  }
+  var allActive=SEL.team.size===b2cTeams.length && b2cTeams.every(function(t){return SEL.team.has(t);});
+  el.appendChild(mkBtn('All',allActive,function(){
+    SEL.team=new Set(b2cTeams); renderAll();
+  }));
+  b2cTeams.forEach(function(t){
+    el.appendChild(mkBtn(t,SEL.team.has(t),function(){
+      if(SEL.team.has(t)){ SEL.team.delete(t); if(SEL.team.size===0) SEL.team.add(t); }
+      else SEL.team.add(t);
+      renderAll();
+    }));
+  });
+}
+
 function renderTeam(){
   dc('team');
+  renderTeamToggle('divToggleTeam');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
   charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams,datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
@@ -1169,6 +1233,7 @@ function renderTeam(){
 
 function renderCat(){
   dc('cat');
+  renderDivToggle('divToggleCat');
   var data=getFiltered(), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
   charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#cbd5e1',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
@@ -1774,6 +1839,18 @@ function exportExcel(){
   if(hasOud){ header.push('OUD_'+label,'OUD_Delta_'+label); }
   if(hasAr){ header.push('Credit_Limit','AR_Balance','AR_Overdue','OVD_0-30','OVD_30-60','OVD_60+','DSO_Simple','DSO_Aged'); }
   if(hasCol){ header.push('Col_MTD','Col_YTD'); }
+  // Monthly breakdown for the selected Year(s) (top filter), same account/team/div/status/period scope as the table
+  // Always includes both Value and Qty regardless of the current mode toggle
+  var selYears=[...SEL.year].sort(function(a,b){return a-b;}), months=['01','02','03','04','05','06','07','08','09','10','11','12'];
+  selYears.forEach(function(yr){ months.forEach(function(m){ header.push(yr+'_'+m+'_Value',yr+'_'+m+'_Qty'); }); });
+  var acctMonthly={};
+  RAW.txn.filter(passFilterExceptYear).forEach(function(r){
+    if(selYears.indexOf(r[C.Y])===-1) return;
+    var id=r[C.ID], key=r[C.Y]+'_'+r[C.M];
+    if(!acctMonthly[id]) acctMonthly[id]={};
+    if(!acctMonthly[id][key]) acctMonthly[id][key]={v:0,q:0};
+    acctMonthly[id][key].v+=r[C.VL]; acctMonthly[id][key].q+=r[C.QT];
+  });
   var sq=document.getElementById('tblSearch'), q=(sq?sq.value:'').toLowerCase();
   var filtered=q?_tblData.filter(function(a){return(a.nm||'').toLowerCase().includes(q);}):_tblData;
   var csv='\uFEFF'+header.join(',')+'\n';
@@ -1787,6 +1864,7 @@ function exportExcel(){
     if(hasOud){ row.push(Math.round(isVal?a.oud_v:a.oud_q),Math.round(isVal?a.oud_dv:a.oud_dq)); }
     if(hasAr){ row.push(Math.round(a.ar_cl),Math.round(a.ar_bal),Math.round(a.ar_ovd),Math.round(a.ar_o1),Math.round(a.ar_o2),Math.round(a.ar_o3)); row.push(a.dso_simple!=null?a.dso_simple.toFixed(1):'',a.dso_aged!=null?a.dso_aged.toFixed(1):''); }
     if(hasCol){ row.push(Math.round(a.col_mtd),Math.round(a.col_ytd)); }
+    selYears.forEach(function(yr){ months.forEach(function(m){ var c=(acctMonthly[a.id]||{})[yr+'_'+m]||{v:0,q:0}; row.push(Math.round(c.v),Math.round(c.q)); }); });
     csv+=row.join(',')+'\n';
   });
   var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
