@@ -204,8 +204,8 @@ tfoot .fz{background:#0f172a}
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category (Compare)</h3><div class="div-toggle" id="teamToggleCat2"></div></div><canvas id="catChart2"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
   <div class="chart-box"><h3>OUD Monthly Trend (Aug '25 ~ Jul '26)</h3><canvas id="oudDeltaChart"></canvas></div>
-  <div class="chart-box"><h3>Collection Monthly Trend (Apr '26 ~ Jul '26)</h3><canvas id="colMonthlyChart"></canvas></div>
-  <div class="chart-box"><h3>Collection Cumulative Trend (Apr '26 ~ Jul '26)</h3><canvas id="colCumulativeChart"></canvas></div>
+  <div class="chart-box"><h3>Collection / Receivable / Overdue — Monthly (Jan '25 ~ Jul '26)</h3><canvas id="colMonthlyChart"></canvas></div>
+  <div class="chart-box"><h3>Collection / Receivable / Overdue — Cumulative (Jan '25 ~ Jul '26)</h3><canvas id="colCumulativeChart"></canvas></div>
 </div>
 
 <!-- All Accounts Table (unified: Sell-Thru + OUD + AR + Collection) -->
@@ -1399,15 +1399,31 @@ function renderOudDeltaChart(){
   charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
-// Collection Monthly Trend (Apr'26~Jul'26 — EXACT month-end snapshots only,
-// see load_collection_monthly() in refresh_dashboard.py for why March is
-// excluded). Linked to the main filter, same convention as OUD/AR charts.
+// Collection/Receivable/Overdue Monthly Trend (Jan'25~Jul'26 — EXACT month-end
+// snapshots only, see load_collection_monthly()/load_ar_monthly() in
+// refresh_dashboard.py). Linked to the main filter, same convention as OUD.
+// col_monthly drives the month axis; ar_monthly (Receivable/Overdue) is looked
+// up by matching 'month' key — missing months render as a gap (null), not 0.
+function _arMonthlyTotals(monthKey, filteredIds){
+  var arMonthly=RAW.ar_monthly;
+  if(!arMonthly) return {bal:null, ovd:null};
+  var snap=arMonthly.find(function(s){return s.month===monthKey;});
+  if(!snap) return {bal:null, ovd:null};
+  var bal=0, ovd=0;
+  Object.keys(snap.accts).forEach(function(id){
+    var nid=isNaN(+id)?id:+id;
+    if(!filteredIds.has(nid)) return;
+    bal+=snap.accts[id].bal;
+    ovd+=snap.accts[id].ovd;
+  });
+  return {bal:bal, ovd:ovd};
+}
 function renderColMonthlyChart(){
   dc('colMonthly');
   var monthly=RAW.col_monthly;
   if(!monthly||!monthly.length){ return; }
   var filteredIds=getFilteredIdsNoPeriod();
-  var labels=[], values=[];
+  var labels=[], colValues=[], balValues=[], ovdValues=[];
   monthly.forEach(function(snap){
     var ym=snap.month.split('-'), yr=ym[0].slice(2), mm=ym[1];
     labels.push(MONTH_LABELS[mm]+" '"+yr);
@@ -1417,20 +1433,28 @@ function renderColMonthlyChart(){
       if(!filteredIds.has(nid)) return;
       total+=snap.accts[id].mtd;
     });
-    values.push(total);
+    colValues.push(total);
+    var ar=_arMonthlyTotals(snap.month, filteredIds);
+    balValues.push(ar.bal); ovdValues.push(ar.ovd);
   });
-  charts['colMonthly']=new Chart(document.getElementById('colMonthlyChart'),{type:'bar',data:{labels:labels,datasets:[{label:'Collection (MTD)',data:values,backgroundColor:'#10b981cc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#10b981',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  charts['colMonthly']=new Chart(document.getElementById('colMonthlyChart'),{type:'bar',data:{labels:labels,datasets:[
+    {type:'bar',label:'Collection (MTD)',data:colValues,backgroundColor:'#10b981cc',borderRadius:3},
+    {type:'line',label:'Receivable (Balance)',data:balValues,borderColor:'#3b82f6',backgroundColor:'#3b82f633',tension:.3,fill:false,pointRadius:3,borderWidth:2},
+    {type:'line',label:'Overdue',data:ovdValues,borderColor:'#ef4444',backgroundColor:'#ef444433',tension:.3,fill:false,pointRadius:3,borderWidth:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // Collection Cumulative Trend — YTD field read directly from each month's
-// closing snapshot (calendar-year cumulative; valid as-is since Apr~Jul is
-// entirely within 2026, no Jan-1 reset crossed).
+// closing snapshot (calendar-year cumulative; resets Jan 1 — 2025→2026
+// boundary crossed here, each year's YTD is its own cycle, not a running
+// 19-month total). Receivable/Overdue plotted alongside as-is (point-in-time
+// balances, not cumulative by nature).
 function renderColCumulativeChart(){
   dc('colCumulative');
   var monthly=RAW.col_monthly;
   if(!monthly||!monthly.length){ return; }
   var filteredIds=getFilteredIdsNoPeriod();
-  var labels=[], values=[];
+  var labels=[], colValues=[], balValues=[], ovdValues=[];
   monthly.forEach(function(snap){
     var ym=snap.month.split('-'), yr=ym[0].slice(2), mm=ym[1];
     labels.push(MONTH_LABELS[mm]+" '"+yr);
@@ -1440,9 +1464,15 @@ function renderColCumulativeChart(){
       if(!filteredIds.has(nid)) return;
       total+=snap.accts[id].ytd;
     });
-    values.push(total);
+    colValues.push(total);
+    var ar=_arMonthlyTotals(snap.month, filteredIds);
+    balValues.push(ar.bal); ovdValues.push(ar.ovd);
   });
-  charts['colCumulative']=new Chart(document.getElementById('colCumulativeChart'),{type:'line',data:{labels:labels,datasets:[{label:'Collection (Cumulative YTD)',data:values,borderColor:'#3b82f6',backgroundColor:'#3b82f633',tension:.3,fill:true,pointRadius:3,borderWidth:2,datalabels:{display:true,align:'top',anchor:'end',color:'#3b82f6',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  charts['colCumulative']=new Chart(document.getElementById('colCumulativeChart'),{type:'line',data:{labels:labels,datasets:[
+    {label:'Collection (Cumulative YTD)',data:colValues,borderColor:'#10b981',backgroundColor:'#10b98133',tension:.3,fill:false,pointRadius:3,borderWidth:2},
+    {label:'Receivable (Balance)',data:balValues,borderColor:'#3b82f6',backgroundColor:'#3b82f633',tension:.3,fill:false,pointRadius:3,borderWidth:2},
+    {label:'Overdue',data:ovdValues,borderColor:'#ef4444',backgroundColor:'#ef444433',tension:.3,fill:false,pointRadius:3,borderWidth:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
