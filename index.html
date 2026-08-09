@@ -200,8 +200,8 @@ tfoot .fz{background:#0f172a}
   <div class="chart-box full-width"><h3>Monthly Trend</h3><canvas id="monthlyChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Team</h3><div class="div-toggle" id="divToggleTeam"></div></div><canvas id="teamChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category</h3><div class="div-toggle" id="divToggleCat"></div></div><canvas id="catChart"></canvas></div>
-  <div class="chart-box"><h3>Account Status Distribution</h3><canvas id="statusChart"></canvas></div>
   <div class="chart-box"><h3>YoY Growth by Team</h3><canvas id="growthChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>By Category (Compare)</h3><div class="div-toggle" id="teamToggleCat2"></div></div><canvas id="catChart2"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
   <div class="chart-box"><h3>OUD Week-over-Week Change</h3><canvas id="oudDeltaChart"></canvas></div>
 </div>
@@ -580,6 +580,20 @@ function passFilter(r){
   return true;
 }
 function getFiltered(){ return RAW.txn.filter(passFilter); }
+// Same as passFilter, but substitutes a custom Set for the 'team' dimension —
+// used by the independent "By Category (Compare)" panel so its own team
+// toggle doesn't touch the master Team filter (or any other chart/KPI).
+function getFilteredCustomTeam(teamSet){
+  return RAW.txn.filter(function(r){
+    for(const d of DIMS){
+      var selSet = d.key==='team' ? teamSet : SEL[d.key];
+      if(!selSet.has(colVal(r,d))) return false;
+    }
+    var dy=r[C.DY];
+    if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) return false; }
+    return true;
+  });
+}
 function getFilteredIds(){ return new Set(getFiltered().map(function(r){return r[C.ID];})); }
 // For PGI/Remain/Open: filters all dimensions EXCEPT date period (snapshots are period-independent)
 function passFilterNoPeriod(r){
@@ -1231,21 +1245,82 @@ function renderTeam(){
   charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams,datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
+// By Category has its own independent team-selection state (SEL_team1) —
+// deliberately NOT tied to the master Team filter (unlike By Team's toggle),
+// and NOT tied to the Compare panel's state either, so the two By Category
+// panels can each be set to a different team slice for actual comparison.
+var SEL_team1=null;
+function renderTeamToggle1(elId){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  var b2cTeams=[...ALL.team].filter(function(t){return getDiv(t)==='B2C';}).sort();
+  if(!SEL_team1) SEL_team1=new Set(b2cTeams);
+  el.innerHTML='';
+  function mkBtn(label,isActive,onClick){
+    var b=document.createElement('button');
+    b.className='div-toggle-btn'+(isActive?' active':'');
+    b.textContent=label;
+    b.onclick=onClick;
+    return b;
+  }
+  var allActive=SEL_team1.size===b2cTeams.length && b2cTeams.every(function(t){return SEL_team1.has(t);});
+  el.appendChild(mkBtn('All',allActive,function(){
+    SEL_team1=new Set(b2cTeams); renderCat();
+  }));
+  b2cTeams.forEach(function(t){
+    el.appendChild(mkBtn(t,SEL_team1.has(t),function(){
+      if(SEL_team1.has(t)){ SEL_team1.delete(t); if(SEL_team1.size===0) SEL_team1.add(t); }
+      else SEL_team1.add(t);
+      renderCat();
+    }));
+  });
+}
+
 function renderCat(){
   dc('cat');
-  renderDivToggle('divToggleCat');
-  var data=getFiltered(), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
+  renderTeamToggle1('divToggleCat');
+  var data=getFilteredCustomTeam(SEL_team1), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
   charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#cbd5e1',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
-function renderStatusChart(){
-  dc('status');
-  var data=getFiltered(), sa={};
-  data.forEach(function(r){var s=r[C.ST];if(!sa[s])sa[s]=new Set();sa[s].add(r[C.ID]);});
-  var labels=Object.keys(sa).sort(), values=labels.map(function(l){return sa[l].size;}), colors=labels.map(function(l){return CS[l]||'#64748b';});
-  var total=values.reduce(function(a,b){return a+b;},0);
-  charts['status']=new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:labels.map(function(l){return l.replace(/_/g,' ');}),datasets:[{data:values,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},padding:6}},datalabels:{color:'#fff',font:{size:10,weight:'700'},formatter:function(v,ctx){var pct=total>0?Math.round(v/total*100):0;return v+'\n('+pct+'%)';},textAlign:'center'}}}});
+// ======== Independent compare panel: By Category (Compare) ========
+// Own local team-selection state (SEL_team2), completely separate from the
+// master Team filter and from the primary By Category chart above — lets
+// the two panels show two different team/division slices side by side.
+var SEL_team2=null;
+function renderTeamToggle2(elId){
+  var el=document.getElementById(elId);
+  if(!el) return;
+  var b2cTeams=[...ALL.team].filter(function(t){return getDiv(t)==='B2C';}).sort();
+  if(!SEL_team2) SEL_team2=new Set(b2cTeams);
+  el.innerHTML='';
+  function mkBtn(label,isActive,onClick){
+    var b=document.createElement('button');
+    b.className='div-toggle-btn'+(isActive?' active':'');
+    b.textContent=label;
+    b.onclick=onClick;
+    return b;
+  }
+  var allActive=SEL_team2.size===b2cTeams.length && b2cTeams.every(function(t){return SEL_team2.has(t);});
+  el.appendChild(mkBtn('All',allActive,function(){
+    SEL_team2=new Set(b2cTeams); renderCat2();
+  }));
+  b2cTeams.forEach(function(t){
+    el.appendChild(mkBtn(t,SEL_team2.has(t),function(){
+      if(SEL_team2.has(t)){ SEL_team2.delete(t); if(SEL_team2.size===0) SEL_team2.add(t); }
+      else SEL_team2.add(t);
+      renderCat2();
+    }));
+  });
+}
+
+function renderCat2(){
+  dc('cat2');
+  renderTeamToggle2('teamToggleCat2');
+  var data=getFilteredCustomTeam(SEL_team2), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
+      ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
+  charts['cat2']=new Chart(document.getElementById('catChart2'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#cbd5e1',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 function renderGrowth(){
@@ -1924,7 +1999,7 @@ function renderAll(){
   }
   renderTopTable();
   renderKPI(); renderOudKPI(); renderArKPI(); renderDsoKPI(); renderStatus();
-  renderMonthly(); renderTeam(); renderCat(); renderStatusChart(); renderGrowth();
+  renderMonthly(); renderTeam(); renderCat(); renderGrowth(); renderCat2();
   renderOudTeamChart(); renderOudDeltaChart();
 }
 // ======== ASYNC DATA LOADER ========
