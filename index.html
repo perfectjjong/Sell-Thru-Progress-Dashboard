@@ -1587,7 +1587,21 @@ function renderColTrendChart(){
       var r=ranked[ctx.dataIndex][rankIdx];
       return r ? (COL_TREND_METRIC_META[r.metric].name+': '+fmt(r.val)) : '';
     }}},
-    datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}
+    datalabels:{
+      display:function(ctx){
+        var rankIdx=ctx.dataset.label==='_rank1'?0:ctx.dataset.label==='_rank2'?1:2;
+        var r=ranked[ctx.dataIndex][rankIdx];
+        return !!(r && r.metric==='ovd');
+      },
+      align:'center', anchor:'center', color:'#fff', font:{size:8,weight:'700'},
+      formatter:function(v,ctx){
+        var p=pairs[ctx.dataIndex];
+        var vals=byYearMonth[p.mm][p.yr];
+        if(!vals || !vals.bal) return '';
+        return Math.round(vals.ovd/vals.bal*100)+'%';
+      }
+    },
+    annotation:{annotations:monthBoundaryAnnotations()}
   },scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
