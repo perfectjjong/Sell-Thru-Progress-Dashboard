@@ -1436,19 +1436,19 @@ function renderOudDeltaChart(){
 // col_monthly drives the month axis; ar_monthly (Receivable/Overdue) is
 // looked up by matching 'month' key — missing months render as a gap
 // (null), not 0.
-function _arMonthlyByTeam(monthKey, filteredIds){
+function _arMonthlyTotals(monthKey, filteredIds){
   var arMonthly=RAW.ar_monthly;
-  var balByTeam={}, ovdByTeam={};
-  var snap=arMonthly && arMonthly.find(function(s){return s.month===monthKey;});
+  if(!arMonthly) return {bal:null, ovd:null};
+  var snap=arMonthly.find(function(s){return s.month===monthKey;});
   if(!snap) return {bal:null, ovd:null};
+  var bal=0, ovd=0;
   Object.keys(snap.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
     if(!filteredIds.has(nid)) return;
-    var tm=ACCT_TEAM[nid]||'Unknown';
-    balByTeam[tm]=(balByTeam[tm]||0)+snap.accts[id].bal;
-    ovdByTeam[tm]=(ovdByTeam[tm]||0)+snap.accts[id].ovd;
+    bal+=snap.accts[id].bal;
+    ovd+=snap.accts[id].ovd;
   });
-  return {bal:balByTeam, ovd:ovdByTeam};
+  return {bal:bal, ovd:ovd};
 }
 
 // Reusable independent B2C-team toggle: stateObj={sel:Set|null} holds this
@@ -1521,12 +1521,16 @@ function renderColSnapshotChart(){
 
 var _colTrendTeamState={sel:null};
 // 중첩(넓이 차등) 막대 1개당 월×연도 1쌍 — Receivable(가장 넓음/뒤)→Overdue(중간)→
-// Collection(가장 좁음/앞) 순으로 겹침. 각 층 내부는 채널(팀)별 색상으로 쌓아
-// 비중을 보여줌 (2026-08-10 형님 지적: "그 안에서 비중으로 컬러를 다르게 가야지").
+// Collection(가장 좁음/앞) 순으로 겹침. 색=지표 3개(파랑/빨강/초록)만 구분,
+// 흐림/선명함=연도(2025=흐린색, 2026=선명한색) — 팀/채널 분해 아님
+// (2026-08-10 형님 정정: "지표 3개만 구분, 채널별 아님").
 // x축="Jan '25","Jan '26","Feb '25","Feb '26",... 로 월마다 연도 2개를 나란히 배치.
-// 층별로 stack ID를 분리(bal/ovd/col)해 그 안에서만 팀별로 합산되게 하고,
-// grouped:false + barPercentage 차등으로 3개 층을 겹쳐 그림.
 var MO_ORDER=['01','02','03','04','05','06','07','08','09','10','11','12'];
+var COL_TREND_COLORS={
+  bal:{'2025':'#3b82f666','2026':'#3b82f6'},
+  ovd:{'2025':'#ef444466','2026':'#ef4444'},
+  col:{'2025':'#10b98166','2026':'#10b981'},
+};
 function renderColTrendChart(){
   dc('colTrend');
   var monthly=RAW.col_monthly;
@@ -1535,43 +1539,31 @@ function renderColTrendChart(){
   var filteredIds=getFilteredIdsNoPeriodCustomTeam(_colTrendTeamState.sel);
   var byYearMonth={};
   MO_ORDER.forEach(function(mm){ byYearMonth[mm]={}; });
-  var allTeams=new Set();
   monthly.forEach(function(snap){
     var ym=snap.month.split('-'), yr=ym[0], mm=ym[1];
-    var colByTeam={};
+    var total=0;
     Object.keys(snap.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
       if(!filteredIds.has(nid)) return;
-      var tm=ACCT_TEAM[nid]||'Unknown';
-      allTeams.add(tm);
-      colByTeam[tm]=(colByTeam[tm]||0)+snap.accts[id].mtd;
+      total+=snap.accts[id].mtd;
     });
-    var ar=_arMonthlyByTeam(snap.month, filteredIds);
-    if(ar.bal) Object.keys(ar.bal).forEach(function(t){ allTeams.add(t); });
-    byYearMonth[mm][yr]={col:colByTeam, bal:ar.bal, ovd:ar.ovd};
+    var ar=_arMonthlyTotals(snap.month, filteredIds);
+    byYearMonth[mm][yr]={col:total, bal:ar.bal, ovd:ar.ovd};
   });
-  var teams=[...allTeams].sort();
   var pairs=[];
   MO_ORDER.forEach(function(mm){ ['2025','2026'].forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
   var labels=pairs.map(function(p){ return MONTH_LABELS[p.mm]+" '"+p.yr.slice(2); });
-  var LAYERS=[
-    {metric:'bal', label:'Receivable (Balance)', barPercentage:1.0},
-    {metric:'ovd', label:'Overdue', barPercentage:0.6},
-    {metric:'col', label:'Collection (MTD)', barPercentage:0.3},
-  ];
-  var ds=[];
-  LAYERS.forEach(function(layer){
-    teams.forEach(function(t,i){
-      ds.push({
-        label:layer.label+' — '+teamLabel(t),
-        data:pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; var m=v&&v[layer.metric]; return m ? (m[t]||0) : null; }),
-        backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+'dd',
-        grouped:false, categoryPercentage:0.7, barPercentage:layer.barPercentage,
-        stack:layer.metric, borderRadius:2
-      });
-    });
-  });
-  charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9},filter:function(item){return item.text.indexOf('Receivable (Balance) — ')===0;}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  function seriesFor(metric){
+    return pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? v[metric] : null; });
+  }
+  function colorFor(metric){
+    return pairs.map(function(p){ return COL_TREND_COLORS[metric][p.yr]; });
+  }
+  charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:[
+    {label:'Receivable (Balance)', data:seriesFor('bal'), backgroundColor:colorFor('bal'), grouped:false, categoryPercentage:0.7, barPercentage:1.0, borderRadius:2},
+    {label:'Overdue', data:seriesFor('ovd'), backgroundColor:colorFor('ovd'), grouped:false, categoryPercentage:0.7, barPercentage:0.6, borderRadius:2},
+    {label:'Collection (MTD)', data:seriesFor('col'), backgroundColor:colorFor('col'), grouped:false, categoryPercentage:0.7, barPercentage:0.3, borderRadius:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
