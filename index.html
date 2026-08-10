@@ -394,6 +394,9 @@ const DIV_MAP={
 const DIV_ORDER=['B2C','B2B','Others'];
 const CLS_ORDER=['A+','A','B','C','D','IR-X','OR-X','SME-X','Unclassified'];
 function getDiv(team){ return DIV_MAP[team]||'Others'; }
+// Display-only rename (2026-08-09 형님 지시): raw team key stays 'IR' everywhere
+// (filters/SEL.team/data matching untouched) — only the visible label changes.
+function teamLabel(t){ return t==='IR' ? 'IR Main' : t; }
 
 // ======== OUD HELPERS ========
 var CLS_MAP={};
@@ -759,7 +762,7 @@ function buildFilterBar(){
         renderAll();
       };
       const sp=document.createElement('span');
-      sp.textContent=String(val);
+      sp.textContent=d.key==='team'?teamLabel(String(val)):String(val);
       lbl.appendChild(cb); lbl.appendChild(sp);
       list.appendChild(lbl);
     });
@@ -917,7 +920,7 @@ function renderKPI(){
             var pct=rsmTotal?(tv/rsmTotal*100):0;
             var tc=tmColors[tm]||'#94a3b8';
             h+='<div style="flex:1;min-width:70px;padding:3px 5px;background:#1e293b;border-radius:4px;border-left:2px solid '+tc+';">';
-            h+='<div style="font-size:8px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+tm+'</div>';
+            h+='<div style="font-size:8px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+teamLabel(tm)+'</div>';
             h+='<div style="font-size:11px;font-weight:600;color:'+tc+';">'+fmt(tv)+'</div>';
             h+='<div style="font-size:8px;color:#64748b;">'+pct.toFixed(1)+'%</div>';
             h+='</div>';
@@ -1243,7 +1246,7 @@ function renderTeamToggle(elId){
     SEL.team=new Set(b2cTeams); renderAll();
   }));
   b2cTeams.forEach(function(t){
-    el.appendChild(mkBtn(t,SEL.team.has(t),function(){
+    el.appendChild(mkBtn(teamLabel(t),SEL.team.has(t),function(){
       if(SEL.team.has(t)){ SEL.team.delete(t); if(SEL.team.size===0) SEL.team.add(t); }
       else SEL.team.add(t);
       renderAll();
@@ -1256,7 +1259,7 @@ function renderTeam(){
   renderTeamToggle('divToggleTeam');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
-  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams,datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
+  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // By Category has its own independent team-selection state (SEL_team1) —
@@ -1282,7 +1285,7 @@ function renderTeamToggle1(elId){
     SEL_team1=new Set(b2cTeams); renderCat();
   }));
   b2cTeams.forEach(function(t){
-    el.appendChild(mkBtn(t,SEL_team1.has(t),function(){
+    el.appendChild(mkBtn(teamLabel(t),SEL_team1.has(t),function(){
       if(SEL_team1.has(t)){ SEL_team1.delete(t); if(SEL_team1.size===0) SEL_team1.add(t); }
       else SEL_team1.add(t);
       renderCat();
@@ -1321,7 +1324,7 @@ function renderTeamToggle2(elId){
     SEL_team2=new Set(b2cTeams); renderCat2();
   }));
   b2cTeams.forEach(function(t){
-    el.appendChild(mkBtn(t,SEL_team2.has(t),function(){
+    el.appendChild(mkBtn(teamLabel(t),SEL_team2.has(t),function(){
       if(SEL_team2.has(t)){ SEL_team2.delete(t); if(SEL_team2.size===0) SEL_team2.add(t); }
       else SEL_team2.add(t);
       renderCat2();
@@ -1341,9 +1344,9 @@ function renderGrowth(){
   dc('growth');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(), pairs=[];
   for(var i=0;i<years.length-1;i++) pairs.push([years[i],years[i+1]]);
-  if(!pairs.length){charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams,datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{datalabels:{display:false}}}});return;}
+  if(!pairs.length){charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{datalabels:{display:false}}}});return;}
   var ds=pairs.map(function(p){var y1=p[0],y2=p[1],g=teams.map(function(t){var v1=data.filter(function(r){return r[C.Y]===y1&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0),v2=data.filter(function(r){return r[C.Y]===y2&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);return v1?((v2-v1)/v1*100):null;});return{label:y1+'\u2192'+y2+' Growth %',data:g,backgroundColor:g.map(function(v){return v!=null&&v>=0?'#10b981cc':'#ef4444cc';}),borderRadius:3};});
-  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams,datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?'#10b981':'#ef4444';},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return v+'%';}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
+  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?'#10b981':'#ef4444';},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return v+'%';}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // ======== OUD CHARTS ========
@@ -1367,7 +1370,7 @@ function renderOudTeamChart(){
   });
   var teams=Object.keys(teamData).sort(function(a,b){return (isVal?teamData[b].v:teamData[b].q)-(isVal?teamData[a].v:teamData[a].q);});
   var vals=teams.map(function(t){return isVal?teamData[t].v:teamData[t].q;});
-  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams,datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#fbbf24cc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
+  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#fbbf24cc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // OUD Monthly Trend (Aug'25~Jul'26) \u2014 2026-08-09 \ud615\ub2d8 \ud655\uc815 \uaddc\uce59: \uc6d4 \ub9c8\uc9c0\ub9c9\ub0a0 \uc815\ud655 \uc2a4\ub0c5\uc0f7\uc774
@@ -1405,7 +1408,7 @@ function renderOudDeltaChart(){
   });
   var teams=[...allTeams].sort();
   var ds=teams.map(function(t,i){
-    return{type:'bar',label:t,data:byMonthTeam.map(function(mv){return mv[t]||0;}),backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+'cc',borderRadius:2,stack:'oud'};
+    return{type:'bar',label:teamLabel(t),data:byMonthTeam.map(function(mv){return mv[t]||0;}),backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+'cc',borderRadius:2,stack:'oud'};
   });
   ds.push({type:'line',label:'Total ('+(isVal?'Value':'Qty')+')',data:totals,borderColor:'#fbbf24',backgroundColor:'#fbbf2433',tension:.3,fill:false,pointRadius:3,borderWidth:2,datalabels:{display:true,align:'top',anchor:'end',color:'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}});
   charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
@@ -1454,7 +1457,7 @@ function renderIndependentTeamToggle(elId, stateObj, onChange){
     stateObj.sel=new Set(b2cTeams); onChange();
   }));
   b2cTeams.forEach(function(t){
-    el.appendChild(mkBtn(t,stateObj.sel.has(t),function(){
+    el.appendChild(mkBtn(teamLabel(t),stateObj.sel.has(t),function(){
       if(stateObj.sel.has(t)){ stateObj.sel.delete(t); if(stateObj.sel.size===0) stateObj.sel.add(t); }
       else stateObj.sel.add(t);
       onChange();
@@ -1922,7 +1925,7 @@ function buildTable(arr){
     var v24=isVal?a.v24:a.q24, v25=isVal?a.v25:a.q25, v26=isVal?a.v26:a.q26;
     var ov=isVal?a.oud_v:a.oud_q, odv=isVal?a.oud_dv:a.oud_dq;
     var _rf=_rsmGet(a.id);
-    h+='<tr><td class="fz fz0">'+(i+1)+'</td><td class="fz fz1">'+(a.id||'')+'</td><td class="fz fz2">'+(a.nm||'')+'</td><td class="fz fz3">'+(a.tm||'')+'</td><td class="fz fz4">'+(a.st||'')+'</td>';
+    h+='<tr><td class="fz fz0">'+(i+1)+'</td><td class="fz fz1">'+(a.id||'')+'</td><td class="fz fz2">'+(a.nm||'')+'</td><td class="fz fz3">'+(a.tm?teamLabel(a.tm):'')+'</td><td class="fz fz4">'+(a.st||'')+'</td>';
     h+='<td class="num rsm-fcst-cell" data-id="'+a.id+'" data-col="rsm" data-val="'+(_rf||0)+'" style="cursor:pointer;color:#60a5fa;border-left:1px solid #1e3a5f;">'+(_rf?fmtF(_rf):'<span style="color:#334155;font-size:10px">+</span>')+'</td>';
     h+='<td class="num" data-col="v24" data-val="'+(v24||0)+'">'+fmtF(v24)+'</td><td class="num" data-col="v25" data-val="'+(v25||0)+'">'+fmtF(v25)+'</td><td class="num" data-col="v26" data-val="'+(v26||0)+'">'+fmtF(v26)+'</td>';
     // PGI / Remain / Open (with WoW delta)
