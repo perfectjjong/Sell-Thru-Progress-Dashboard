@@ -198,13 +198,13 @@ tfoot .fz{background:#0f172a}
 <!-- Charts -->
 <div class="chart-grid">
   <div class="chart-box full-width"><h3>Monthly Trend</h3><canvas id="monthlyChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>By Team</h3><div class="div-toggle" id="divToggleTeam"></div></div><canvas id="teamChart"></canvas></div>
+  <div class="chart-box"><h3>By Team</h3><canvas id="teamChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category</h3><div class="div-toggle" id="divToggleCat"></div></div><canvas id="catChart"></canvas></div>
   <div class="chart-box"><h3>YoY Growth by Team</h3><canvas id="growthChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category (Compare)</h3><div class="div-toggle" id="teamToggleCat2"></div></div><canvas id="catChart2"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
-  <div class="chart-box"><h3>OUD Monthly Trend (Aug '25 ~ Jul '26)</h3><canvas id="oudDeltaChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Current Month</h3><div class="div-toggle" id="colSnapToggle"></div></div><canvas id="colSnapChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>OUD Monthly Trend (Aug '25 ~ Jul '26)</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
+  <div class="chart-box"><h3>Collection / Receivable / Overdue — Current Month</h3><canvas id="colSnapChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Monthly Trend (Jan '25 ~ Jul '26)</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
 </div>
 
@@ -1225,38 +1225,8 @@ function renderDivToggle(elId){
   });
 }
 
-// ======== IN-CHART TEAM TOGGLE (By Team = B2C teams only) ========
-// Shows only the B2C-division teams (OR/OR_Others/IR/IR_Others/SME) as quick
-// filters. Shares SEL.team with the master Team filter, so it's a real filter
-// (affects KPIs/table/every chart), not just a local chart view.
-function renderTeamToggle(elId){
-  var el=document.getElementById(elId);
-  if(!el) return;
-  el.innerHTML='';
-  var b2cTeams=[...ALL.team].filter(function(t){return getDiv(t)==='B2C';}).sort();
-  function mkBtn(label,isActive,onClick){
-    var b=document.createElement('button');
-    b.className='div-toggle-btn'+(isActive?' active':'');
-    b.textContent=label;
-    b.onclick=onClick;
-    return b;
-  }
-  var allActive=SEL.team.size===b2cTeams.length && b2cTeams.every(function(t){return SEL.team.has(t);});
-  el.appendChild(mkBtn('All',allActive,function(){
-    SEL.team=new Set(b2cTeams); renderAll();
-  }));
-  b2cTeams.forEach(function(t){
-    el.appendChild(mkBtn(teamLabel(t),SEL.team.has(t),function(){
-      if(SEL.team.has(t)){ SEL.team.delete(t); if(SEL.team.size===0) SEL.team.add(t); }
-      else SEL.team.add(t);
-      renderAll();
-    }));
-  });
-}
-
 function renderTeam(){
   dc('team');
-  renderTeamToggle('divToggleTeam');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
   charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
@@ -1382,12 +1352,16 @@ var MONTH_LABELS={'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'J
 // + a total line overlaid on top, same 12 monthly closing snapshots, same
 // main-filter linkage. (2026-08-09: 형님 지시로 별도 차트가 아니라 하나로 합침)
 var TEAM_PALETTE=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#84cc16','#6366f1','#14b8a6','#eab308','#a855f7','#64748b'];
+// Independent B2C-team toggle (2026-08-10 형님 지시) — not tied to the
+// master Team filter or to any other chart's toggle.
+var _oudDeltaTeamState={sel:null};
 function renderOudDeltaChart(){
   dc('oudDelta');
   var monthly=RAW.oud_monthly;
   if(!monthly||!monthly.length){ return; }
+  renderIndependentTeamToggle('oudDeltaToggle', _oudDeltaTeamState, renderOudDeltaChart);
   var isVal=mode==='value';
-  var filteredIds=getFilteredIdsNoPeriod();
+  var filteredIds=getFilteredIdsNoPeriodCustomTeam(_oudDeltaTeamState.sel);
   var labels=[], allTeams=new Set(), byMonthTeam=[], totals=[];
   monthly.forEach(function(snap){
     var ym=snap.month.split('-'), yr=ym[0].slice(2), mm=ym[1];
@@ -1417,8 +1391,9 @@ function renderOudDeltaChart(){
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
 // (Jan'25~Jul'26 — EXACT month-end snapshots only, see
 // load_collection_monthly()/load_ar_monthly() in refresh_dashboard.py).
-// Both charts have their OWN independent team toggle (2026-08-09 형님 지시)
-// — not tied to the master Team filter or to each other.
+// Monthly Trend has its OWN independent team toggle (2026-08-09 형님 지시),
+// not tied to the master Team filter. Current Month has no toggle of its
+// own (2026-08-10 형님 지시) — it follows the master Team filter directly.
 // col_monthly drives the month axis; ar_monthly (Receivable/Overdue) is
 // looked up by matching 'month' key — missing months render as a gap
 // (null), not 0.
@@ -1465,18 +1440,18 @@ function renderIndependentTeamToggle(elId, stateObj, onChange){
   });
 }
 
-var _colSnapTeamState={sel:null};
 // Uses the live daily "current" snapshot (RAW.col / RAW.ar.current — updated
 // every day, e.g. as of 2026-08-08) rather than col_monthly's last CLOSED
 // month. col_monthly/ar_monthly deliberately exclude the in-progress month
 // (no month-end snapshot exists yet), so reusing them here would show last
 // month (Jul) under a "Current Month" label — wrong. (2026-08-09 형님 지적)
+// Style/filter follow By Team's chart (horizontal bar, master Team filter,
+// no chart-local toggle) — 2026-08-10 형님 지시.
 function renderColSnapshotChart(){
   dc('colSnap');
   var col=RAW.col;
   if(!col||!col.accts){ return; }
-  renderIndependentTeamToggle('colSnapToggle', _colSnapTeamState, renderColSnapshotChart);
-  var filteredIds=getFilteredIdsNoPeriodCustomTeam(_colSnapTeamState.sel);
+  var filteredIds=getFilteredIdsNoPeriod();
   var colTotal=0;
   Object.keys(col.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
@@ -1493,7 +1468,7 @@ function renderColSnapshotChart(){
       ovdTotal+=arCur.accts[id].ovd;
     });
   }
-  charts['colSnap']=new Chart(document.getElementById('colSnapChart'),{type:'bar',data:{labels:['Collection (MTD)','Receivable (Balance)','Overdue'],datasets:[{label:'As of '+col.date,data:[colTotal,balTotal,ovdTotal],backgroundColor:['#10b981cc','#3b82f6cc','#ef4444cc'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},plugins:{legend:{display:false},datalabels:{anchor:'end',align:'top',color:'#94a3b8',font:{size:10,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',font:{size:11}},grid:{display:false}},y:{grace:'15%',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  charts['colSnap']=new Chart(document.getElementById('colSnapChart'),{type:'bar',data:{labels:['Collection (MTD)','Receivable (Balance)','Overdue'],datasets:[{label:'As of '+col.date,data:[colTotal,balTotal,ovdTotal],backgroundColor:['#10b981cc','#3b82f6cc','#ef4444cc'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 var _colTrendTeamState={sel:null};
