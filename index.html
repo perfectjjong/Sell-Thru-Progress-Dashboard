@@ -1562,9 +1562,9 @@ function renderColTrendChart(){
     return pairs.map(function(p){ return COL_TREND_COLORS[metric][p.yr]; });
   }
   charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:[
-    {label:'Receivable (Balance)', data:seriesFor('bal'), backgroundColor:colorFor('bal'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2},
-    {label:'Overdue', data:seriesFor('ovd'), backgroundColor:colorFor('ovd'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2},
-    {label:'Collection (MTD)', data:seriesFor('col'), backgroundColor:colorFor('col'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2},
+    {label:'Receivable (Balance)', data:seriesFor('bal'), backgroundColor:colorFor('bal'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:3},
+    {label:'Overdue', data:seriesFor('ovd'), backgroundColor:colorFor('ovd'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:2},
+    {label:'Collection (MTD)', data:seriesFor('col'), backgroundColor:colorFor('col'), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:1},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
