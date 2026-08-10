@@ -1445,6 +1445,7 @@ function renderIndependentTeamToggle(elId, stateObj, onChange){
 // month. col_monthly/ar_monthly deliberately exclude the in-progress month
 // (no month-end snapshot exists yet), so reusing them here would show last
 // month (Jul) under a "Current Month" label — wrong. (2026-08-09 형님 지적)
+// Broken down BY TEAM (like By Team's chart) — 2026-08-10 형님 지시.
 // Style/filter follow By Team's chart (horizontal bar, master Team filter,
 // no chart-local toggle) — 2026-08-10 형님 지시.
 function renderColSnapshotChart(){
@@ -1452,23 +1453,31 @@ function renderColSnapshotChart(){
   var col=RAW.col;
   if(!col||!col.accts){ return; }
   var filteredIds=getFilteredIdsNoPeriod();
-  var colTotal=0;
+  var teamCol={}, teamBal={}, teamOvd={}, allTeams=new Set();
   Object.keys(col.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
     if(!filteredIds.has(nid)) return;
-    colTotal+=col.accts[id].mtd;
+    var tm=ACCT_TEAM[nid]||'Unknown';
+    allTeams.add(tm);
+    teamCol[tm]=(teamCol[tm]||0)+col.accts[id].mtd;
   });
-  var balTotal=0, ovdTotal=0;
   var arCur=RAW.ar && RAW.ar.current;
   if(arCur && arCur.accts){
     Object.keys(arCur.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
       if(!filteredIds.has(nid)) return;
-      balTotal+=arCur.accts[id].bal;
-      ovdTotal+=arCur.accts[id].ovd;
+      var tm=ACCT_TEAM[nid]||'Unknown';
+      allTeams.add(tm);
+      teamBal[tm]=(teamBal[tm]||0)+arCur.accts[id].bal;
+      teamOvd[tm]=(teamOvd[tm]||0)+arCur.accts[id].ovd;
     });
   }
-  charts['colSnap']=new Chart(document.getElementById('colSnapChart'),{type:'bar',data:{labels:['Collection (MTD)','Receivable (Balance)','Overdue'],datasets:[{label:'As of '+col.date,data:[colTotal,balTotal,ovdTotal],backgroundColor:['#10b981cc','#3b82f6cc','#ef4444cc'],borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
+  var teams=[...allTeams].sort();
+  charts['colSnap']=new Chart(document.getElementById('colSnapChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[
+    {label:'Collection (MTD)',data:teams.map(function(t){return teamCol[t]||0;}),backgroundColor:'#10b981cc',borderRadius:3},
+    {label:'Receivable (Balance)',data:teams.map(function(t){return teamBal[t]||0;}),backgroundColor:'#3b82f6cc',borderRadius:3},
+    {label:'Overdue',data:teams.map(function(t){return teamOvd[t]||0;}),backgroundColor:'#ef4444cc',borderRadius:3},
+  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{title:{display:true,text:'As of '+col.date,color:'#64748b',font:{size:10,weight:'400'},padding:{bottom:6}},legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 var _colTrendTeamState={sel:null};
