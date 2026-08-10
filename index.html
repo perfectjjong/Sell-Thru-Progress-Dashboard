@@ -6,6 +6,7 @@
 <title>Sell-Thru Dashboard — Account Analysis 2024-2026</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;font-size:13px}
@@ -1191,6 +1192,17 @@ function renderStatus(){
 
 // ======== CHARTS ========
 Chart.register(ChartDataLabels);
+Chart.register(window['chartjs-plugin-annotation']);
+// 월별 구분 점선 (2026-08-10 형님 지시: "월별 구분을 할 수 있는 점선이라도 넣어야지").
+// interleaved x축("Jan '25","Jan '26","Feb '25",...) 12개월 사이 경계 11개에 세로 점선.
+function monthBoundaryAnnotations(){
+  var out={};
+  for(var i=0;i<11;i++){
+    var x=i*2+1.5;
+    out['mb'+i]={type:'line', xMin:x, xMax:x, borderColor:'#334155', borderWidth:1, borderDash:[4,4]};
+  }
+  return out;
+}
 var charts={};
 function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
@@ -1403,7 +1415,7 @@ function renderOudDeltaChart(){
   var data=pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v===undefined ? null : v; });
   charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:[
     {label:'OUD ('+(isVal?'Value':'Qty')+')', data:data, backgroundColor:'#fbbf24cc', borderRadius:3}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
@@ -1531,10 +1543,10 @@ function renderColTrendChart(){
     return pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? v[metric] : null; });
   }
   charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:[
-    {label:'Receivable (Balance)', data:seriesFor('bal'), backgroundColor:'#3b82f655', grouped:false, categoryPercentage:0.7, barPercentage:1.0, borderRadius:2},
-    {label:'Overdue', data:seriesFor('ovd'), backgroundColor:'#ef4444cc', grouped:false, categoryPercentage:0.7, barPercentage:0.6, borderRadius:2},
+    {label:'Receivable (Balance)', data:seriesFor('bal'), backgroundColor:'#3b82f6', grouped:false, categoryPercentage:0.7, barPercentage:1.0, borderRadius:2},
+    {label:'Overdue', data:seriesFor('ovd'), backgroundColor:'#ef4444', grouped:false, categoryPercentage:0.7, barPercentage:0.6, borderRadius:2},
     {label:'Collection (MTD)', data:seriesFor('col'), backgroundColor:'#10b981', grouped:false, categoryPercentage:0.7, barPercentage:0.3, borderRadius:2},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
