@@ -203,7 +203,7 @@ tfoot .fz{background:#0f172a}
   <div class="chart-box"><h3>YoY Growth by Team</h3><canvas id="growthChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category (Compare)</h3><div class="div-toggle" id="teamToggleCat2"></div></div><canvas id="catChart2"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>OUD Monthly Trend (Aug '25 ~ Jul '26)</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>OUD Monthly Trend (2025 vs 2026)</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
   <div class="chart-box"><h3>Collection / Receivable / Overdue — Current Month</h3><canvas id="colSnapChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Monthly Trend (2025 vs 2026)</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
 </div>
@@ -1383,10 +1383,14 @@ function renderOudDeltaChart(){
   renderIndependentTeamToggle('oudDeltaToggle', _oudDeltaTeamState, renderOudDeltaChart);
   var isVal=mode==='value';
   var filteredIds=getFilteredIdsNoPeriodCustomTeam(_oudDeltaTeamState.sel);
-  var labels=[], allTeams=new Set(), byMonthTeam=[], totals=[];
+  // x축=월(Jan~Dec), 연도별 스택 그룹 2개(2025/2026)를 나란히 비교 — Collection
+  // Monthly Trend와 동일 방식 (2026-08-10 형님 지시, 2025년 데이터 수배 중이라
+  // 미리 구조만 만들어둠 — 2025년 미수집월은 자동으로 빈 값/gap 처리).
+  var byYearMonth={};
+  MO_ORDER.forEach(function(mm){ byYearMonth[mm]={}; });
+  var allTeams=new Set();
   monthly.forEach(function(snap){
-    var ym=snap.month.split('-'), yr=ym[0].slice(2), mm=ym[1];
-    labels.push(MONTH_LABELS[mm]+" '"+yr);
+    var ym=snap.month.split('-'), yr=ym[0], mm=ym[1];
     var teamVals={}, total=0;
     Object.keys(snap.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
@@ -1398,15 +1402,37 @@ function renderOudDeltaChart(){
       teamVals[tm]=(teamVals[tm]||0)+v;
       total+=v;
     });
-    byMonthTeam.push(teamVals);
-    totals.push(total);
+    byYearMonth[mm][yr]={teamVals:teamVals, total:total};
   });
   var teams=[...allTeams].sort();
-  var ds=teams.map(function(t,i){
-    return{type:'bar',label:teamLabel(t),data:byMonthTeam.map(function(mv){return mv[t]||0;}),backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+'cc',borderRadius:2,stack:'oud'};
+  var labels=MO_ORDER.map(function(mm){return MONTH_LABELS[mm];});
+  var years=['2025','2026'];
+  var ds=[];
+  teams.forEach(function(t,i){
+    years.forEach(function(yr){
+      ds.push({
+        type:'bar',
+        label:teamLabel(t)+' '+yr,
+        data:MO_ORDER.map(function(mm){ var v=byYearMonth[mm][yr]; return v ? (v.teamVals[t]||0) : null; }),
+        backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+(yr==='2025'?'66':'cc'),
+        borderRadius:2,
+        stack:'oud'+yr
+      });
+    });
   });
-  ds.push({type:'line',label:'Total ('+(isVal?'Value':'Qty')+')',data:totals,borderColor:'#fbbf24',backgroundColor:'#fbbf2433',tension:.3,fill:false,pointRadius:3,borderWidth:2,datalabels:{display:true,align:'top',anchor:'end',color:'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}});
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  years.forEach(function(yr){
+    ds.push({
+      type:'line',
+      label:'Total '+yr+' ('+(isVal?'Value':'Qty')+')',
+      data:MO_ORDER.map(function(mm){ var v=byYearMonth[mm][yr]; return v ? v.total : null; }),
+      borderColor:yr==='2025'?'#fbbf2488':'#fbbf24',
+      backgroundColor:'transparent',
+      borderDash:yr==='2025'?[4,3]:[],
+      tension:.3, fill:false, pointRadius:3, borderWidth:2,
+      datalabels:{display:true,align:'top',anchor:'end',color:yr==='2025'?'#fbbf2488':'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}
+    });
+  });
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}},datalabels:{display:false}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
