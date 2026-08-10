@@ -536,6 +536,17 @@ var dayFrom='01-01', dayTo='12-31';
 var ALL={}, SEL={};
 function colVal(r,d){ return d.key==='div'?getDiv(r[C.TM]):d.key==='oud'?(OUD_IDS.has(r[C.ID])?'OUD':'Non OUD'):d.key==='cls'?(CLS_MAP[String(r[C.ID])]||'Unclassified'):r[d.col]; }
 var ACCT_TEAM={};
+// Same as colVal, but 'team'/'div' resolve via the account's CANONICAL
+// (most-recent-year) team (ACCT_TEAM) instead of this specific row's team.
+// Used by the *NoPeriod filters (point-in-time OUD/AR/Collection snapshots):
+// an account's team classification can differ across years (older rows carry
+// stale/uncorrected labels), so a "B2C only" filter must go by the account's
+// CURRENT team, not whichever year's row happens to match. (2026-08-10 형님 버그 리포트)
+function colValCanonical(r,d){
+  if(d.key==='team') return ACCT_TEAM[r[C.ID]];
+  if(d.key==='div') return getDiv(ACCT_TEAM[r[C.ID]]);
+  return colVal(r,d);
+}
 function _initFilters(){
   dayFrom='01-01'; dayTo='12-31';
   (function(){
@@ -550,7 +561,17 @@ function _initFilters(){
   SEL._accountAvailKey=[...ALL['account']].sort().join('|');
   SEL._teamAvailKey=[...ALL['team']].sort().join('|');
   ACCT_TEAM={};
-  RAW.txn.forEach(function(r){ if(!ACCT_TEAM[r[C.ID]]) ACCT_TEAM[r[C.ID]]=r[C.TM]; });
+  // Use the MOST RECENT year's team per account (not first-seen) — team
+  // classification fixes this session only applied to 2025/2026 rows, so
+  // an account's 2024 row can carry a stale/wrong team (e.g. 'Projects')
+  // while its 2026 row has the corrected one (e.g. 'SME'). Point-in-time
+  // charts (OUD/Collection/AR by team) must group by the CURRENT team, or
+  // a B2C-only filter still shows a stale non-B2C bucket. (2026-08-10 형님 버그 리포트)
+  var _acctYear={};
+  RAW.txn.forEach(function(r){
+    var id=r[C.ID], yr=r[C.Y];
+    if(!(id in _acctYear) || yr>=_acctYear[id]){ _acctYear[id]=yr; ACCT_TEAM[id]=r[C.TM]; }
+  });
 }
 
 // ======== OUD value with Category filter ========
@@ -602,7 +623,7 @@ function getFilteredCustomTeam(teamSet){
 function getFilteredIds(){ return new Set(getFiltered().map(function(r){return r[C.ID];})); }
 // For PGI/Remain/Open: filters all dimensions EXCEPT date period (snapshots are period-independent)
 function passFilterNoPeriod(r){
-  for(const d of DIMS) if(!SEL[d.key].has(colVal(r,d))) return false;
+  for(const d of DIMS) if(!SEL[d.key].has(colValCanonical(r,d))) return false;
   return true;
 }
 function getFilteredIdsNoPeriod(){ return new Set(RAW.txn.filter(passFilterNoPeriod).map(function(r){return r[C.ID];})); }
@@ -613,7 +634,7 @@ function getFilteredIdsNoPeriodCustomTeam(teamSet){
   return new Set(RAW.txn.filter(function(r){
     for(const d of DIMS){
       var selSet = d.key==='team' ? teamSet : SEL[d.key];
-      if(!selSet.has(colVal(r,d))) return false;
+      if(!selSet.has(colValCanonical(r,d))) return false;
     }
     return true;
   }).map(function(r){return r[C.ID];}));
