@@ -205,7 +205,7 @@ tfoot .fz{background:#0f172a}
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>OUD Monthly Trend (Aug '25 ~ Jul '26)</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
   <div class="chart-box"><h3>Collection / Receivable / Overdue — Current Month</h3><canvas id="colSnapChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Monthly Trend (Jan '25 ~ Jul '26)</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Monthly Trend (2025 vs 2026)</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
 </div>
 
 <!-- All Accounts Table (unified: Sell-Thru + OUD + AR + Collection) -->
@@ -1502,31 +1502,48 @@ function renderColSnapshotChart(){
 }
 
 var _colTrendTeamState={sel:null};
+// All-bar YoY comparison (2026-08-10 형님 지시): x축=월(Jan~Dec), 월별로
+// 2025 vs 2026을 나란히 비교. 색상=지표(초록/파랑/빨강), 명도=연도(진할수록 2026).
+var MO_ORDER=['01','02','03','04','05','06','07','08','09','10','11','12'];
+var COL_TREND_METRIC_COLORS={
+  col:{'2025':'#10b98166','2026':'#10b981cc'},
+  bal:{'2025':'#3b82f666','2026':'#3b82f6cc'},
+  ovd:{'2025':'#ef444466','2026':'#ef4444cc'},
+};
+var COL_TREND_METRIC_LABELS={col:'Collection (MTD)', bal:'Receivable (Balance)', ovd:'Overdue'};
 function renderColTrendChart(){
   dc('colTrend');
   var monthly=RAW.col_monthly;
   if(!monthly||!monthly.length){ return; }
   renderIndependentTeamToggle('colTrendToggle', _colTrendTeamState, renderColTrendChart);
   var filteredIds=getFilteredIdsNoPeriodCustomTeam(_colTrendTeamState.sel);
-  var labels=[], colValues=[], balValues=[], ovdValues=[];
+  var byYearMonth={};
+  MO_ORDER.forEach(function(mm){ byYearMonth[mm]={}; });
   monthly.forEach(function(snap){
-    var ym=snap.month.split('-'), yr=ym[0].slice(2), mm=ym[1];
-    labels.push(MONTH_LABELS[mm]+" '"+yr);
+    var ym=snap.month.split('-'), yr=ym[0], mm=ym[1];
     var total=0;
     Object.keys(snap.accts).forEach(function(id){
       var nid=isNaN(+id)?id:+id;
       if(!filteredIds.has(nid)) return;
       total+=snap.accts[id].mtd;
     });
-    colValues.push(total);
     var ar=_arMonthlyTotals(snap.month, filteredIds);
-    balValues.push(ar.bal); ovdValues.push(ar.ovd);
+    byYearMonth[mm][yr]={col:total, bal:ar.bal, ovd:ar.ovd};
   });
-  charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:[
-    {type:'bar',label:'Collection (MTD)',data:colValues,backgroundColor:'#10b981cc',borderRadius:3},
-    {type:'line',label:'Receivable (Balance)',data:balValues,borderColor:'#3b82f6',backgroundColor:'#3b82f633',tension:.3,fill:false,pointRadius:3,borderWidth:2},
-    {type:'line',label:'Overdue',data:ovdValues,borderColor:'#ef4444',backgroundColor:'#ef444433',tension:.3,fill:false,pointRadius:3,borderWidth:2},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  var years=['2025','2026'];
+  var labels=MO_ORDER.map(function(mm){return MONTH_LABELS[mm];});
+  var ds=[];
+  ['col','bal','ovd'].forEach(function(metric){
+    years.forEach(function(yr){
+      ds.push({
+        label:COL_TREND_METRIC_LABELS[metric]+' '+yr,
+        data:MO_ORDER.map(function(mm){ var v=byYearMonth[mm][yr]; return v ? v[metric] : null; }),
+        backgroundColor:COL_TREND_METRIC_COLORS[metric][yr],
+        borderRadius:3
+      });
+    });
+  });
+  charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}},datalabels:{display:false}},scales:{x:{ticks:{color:'#64748b',font:{size:10}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
