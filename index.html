@@ -1427,6 +1427,13 @@ function renderOudDeltaChart(){
   var pairs=[];
   MO_ORDER.forEach(function(mm){ ['2025','2026'].forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
   var labels=pairs.map(function(p){ return MONTH_LABELS[p.mm]+" '"+p.yr.slice(2); });
+  // 필터(마스터+독자토글) 적용 후의 팀별 값으로 이미 합산된 byYearMonth 기준 총합
+  // — 막대 맨 위에 라벨로 표시 (2026-08-12 형님 지시).
+  var totals=pairs.map(function(p){
+    var v=byYearMonth[p.mm][p.yr];
+    if(!v) return null;
+    return Object.keys(v).reduce(function(s,t){ return s+(v[t]||0); },0);
+  });
   var ds=teams.map(function(t,i){
     return{
       label:teamLabel(t),
@@ -1435,7 +1442,14 @@ function renderOudDeltaChart(){
       stack:'oud', borderRadius:2
     };
   });
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{stacked:true,ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  if(ds.length){
+    ds[ds.length-1].datalabels={
+      display:true, anchor:'end', align:'top', offset:2,
+      color:'#e2e8f0', font:{size:9,weight:'700'},
+      formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
+    };
+  }
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{stacked:true,grace:'10%',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
