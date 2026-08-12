@@ -1635,7 +1635,10 @@ function renderColTrendChart(){
     },
     annotation:{annotations:monthBoundaryAnnotations()}
   },scales:{
-    x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},
+    x:{ticks:{font:{size:9},color:function(ctx){
+      var lbl=labels[ctx.index]||'';
+      return lbl.indexOf("'26")!==-1 ? '#ffffff' : '#64748b';
+    }},grid:{color:'#1e293b'}},
     y:{position:'left',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},
     y1:{position:'right',grace:'15%',ticks:{color:colMeta.vivid,callback:function(v){return fmt(v);}},grid:{display:false}}
   }}});
