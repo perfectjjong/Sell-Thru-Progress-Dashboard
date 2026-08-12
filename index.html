@@ -561,6 +561,7 @@ function _initFilters(){
   DIMS.forEach(d=>{ SEL[d.key]=new Set(ALL[d.key]); });
   SEL._accountAvailKey=[...ALL['account']].sort().join('|');
   SEL._teamAvailKey=[...ALL['team']].sort().join('|');
+  SEL._clsAvailKey=[...ALL['cls']].sort().join('|');
   ACCT_TEAM={};
   // Use the MOST RECENT year's team per account (not first-seen) — team
   // classification fixes this session only applied to 2025/2026 rows, so
@@ -693,10 +694,20 @@ function buildFilterBar(){
     const avail=available(d.key);
     const isDn=(d.key==='account'||d.key==='team'||d.key==='cls');
     if(d.key==='cls'){
-      var newClsSel=new Set();
-      SEL[d.key].forEach(function(v){ if(avail.has(v)) newClsSel.add(v); });
-      if(newClsSel.size===0) newClsSel=new Set(avail);
-      SEL[d.key]=newClsSel;
+      // 2026-08-12 형님 리포트 버그 수정: 기존엔 "선택 ∩ 가능"만 계산해서 가능목록이
+      // 줄었다 늘어도 한번 빠진 클래스가 다신 안 돌아왔음(한쪽으로만 도는 톱니바퀴).
+      // Team/Account와 동일하게 "가능 목록 자체가 바뀌면 통째로 리셋" 패턴으로 통일.
+      var prevClsAvailKey=SEL._clsAvailKey||'';
+      var curClsAvailKey=[...avail].sort().join('|');
+      if(prevClsAvailKey!==curClsAvailKey){
+        SEL[d.key]=new Set(avail);
+        SEL._clsAvailKey=curClsAvailKey;
+      } else {
+        var newClsSel=new Set();
+        SEL[d.key].forEach(function(v){ if(avail.has(v)) newClsSel.add(v); });
+        if(newClsSel.size===0) newClsSel=new Set(avail);
+        SEL[d.key]=newClsSel;
+      }
     }
     if(d.key==='team'){
       var prevTeamAvailKey=SEL._teamAvailKey||'';
