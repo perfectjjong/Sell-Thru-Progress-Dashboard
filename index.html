@@ -9,147 +9,147 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f2f5;color:#1e293b;font-size:13px}
-.header{background:linear-gradient(135deg,#1a1f36,#2a3150);padding:18px 28px;border-bottom:2px solid #3b82f6;display:flex;justify-content:space-between;align-items:center}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#e2e8f0;font-size:13px}
+.header{background:linear-gradient(135deg,#1e293b,#334155);padding:18px 28px;border-bottom:2px solid #3b82f6;display:flex;justify-content:space-between;align-items:center}
 .header h1{font-size:19px;font-weight:600;color:#f8fafc}
-.header-right{display:flex;gap:20px;font-size:11px;color:#64748b}
+.header-right{display:flex;gap:20px;font-size:11px;color:#94a3b8}
 .header-right span{display:flex;flex-direction:column;gap:2px}
 .header-right .lbl{color:#64748b;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
-.header-right .val{color:#f1f5f9;font-weight:600}
+.header-right .val{color:#e2e8f0;font-weight:600}
 .container{max-width:1440px;margin:0 auto;padding:20px}
 
 /* ===== FILTER BAR ===== */
-.filter-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:12px 16px;background:#fff;border-radius:10px;margin-bottom:18px;border:1px solid #e2e8f0}
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:12px 16px;background:#1e293b;border-radius:10px;margin-bottom:18px;border:1px solid #334155}
 .ms-wrap{position:relative;display:inline-block}
-.ms-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;background:#f8fafc;color:#334155;border:1px solid #cbd5e1;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;user-select:none;transition:border-color .15s}
-.ms-btn:hover{border-color:#2563eb}
-.ms-btn.open{border-color:#3b82f6;background:#fff}
-.ms-btn .ms-label{font-weight:600;color:#1e293b}
-.ms-btn .ms-count{background:#e2e8f0;color:#64748b;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px}
+.ms-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;background:#0f172a;color:#cbd5e1;border:1px solid #475569;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap;user-select:none;transition:border-color .15s}
+.ms-btn:hover{border-color:#60a5fa}
+.ms-btn.open{border-color:#3b82f6;background:#1e293b}
+.ms-btn .ms-label{font-weight:600;color:#e2e8f0}
+.ms-btn .ms-count{background:#334155;color:#94a3b8;font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px}
 .ms-btn .ms-arrow{font-size:8px;color:#64748b;margin-left:2px;transition:transform .15s}
 .ms-btn.open .ms-arrow{transform:rotate(180deg)}
-.ms-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:100;background:#fff;border:1px solid #cbd5e1;border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.12);overflow:hidden}
+.ms-menu{display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:100;background:#1e293b;border:1px solid #475569;border-radius:8px;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.4);overflow:hidden}
 .ms-menu.show{display:block}
-.ms-actions{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid #e2e8f0}
+.ms-actions{display:flex;gap:6px;padding:8px 10px;border-bottom:1px solid #334155}
 .ms-actions button{background:none;border:none;font-size:10px;cursor:pointer;padding:2px 6px;border-radius:3px;font-weight:600}
 .ms-actions .ms-all{color:#3b82f6}
-.ms-actions .ms-all:hover{background:#dbeafe}
+.ms-actions .ms-all:hover{background:#1e3a5f}
 .ms-actions .ms-none{color:#ef4444}
-.ms-actions .ms-none:hover{background:#fee2e2}
+.ms-actions .ms-none:hover{background:#3b1c1c}
 .ms-list{max-height:230px;overflow-y:auto;padding:4px 0}
 .ms-list::-webkit-scrollbar{width:5px}
-.ms-list::-webkit-scrollbar-track{background:#fff}
-.ms-list::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
-.ms-list label{display:flex;align-items:center;gap:7px;padding:4px 12px;cursor:pointer;font-size:11px;color:#334155;transition:background .1s}
-.ms-list label:hover{background:#e2e8f0}
+.ms-list::-webkit-scrollbar-track{background:#1e293b}
+.ms-list::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+.ms-list label{display:flex;align-items:center;gap:7px;padding:4px 12px;cursor:pointer;font-size:11px;color:#cbd5e1;transition:background .1s}
+.ms-list label:hover{background:#334155}
 .ms-list label.disabled{opacity:.3;pointer-events:none}
 .ms-list input[type="checkbox"]{width:13px;height:13px;accent-color:#3b82f6;cursor:pointer;flex-shrink:0}
-.filter-divider{width:1px;height:22px;background:#e2e8f0;margin:0 4px}
-.filter-sku{font-size:11px;color:#64748b;margin-left:auto;font-weight:600}
-.filter-reset{background:none;border:1px solid #cbd5e1;color:#64748b;font-size:10px;padding:4px 10px;border-radius:5px;cursor:pointer;font-weight:600}
+.filter-divider{width:1px;height:22px;background:#334155;margin:0 4px}
+.filter-sku{font-size:11px;color:#94a3b8;margin-left:auto;font-weight:600}
+.filter-reset{background:none;border:1px solid #475569;color:#94a3b8;font-size:10px;padding:4px 10px;border-radius:5px;cursor:pointer;font-weight:600}
 .filter-reset:hover{border-color:#ef4444;color:#ef4444}
 
 /* ===== Tab (Value/Qty) ===== */
-.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:#fff;border-radius:8px;padding:3px;width:fit-content}
-.tab-bar button{background:0;border:0;color:#64748b;padding:7px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:#1e293b;border-radius:8px;padding:3px;width:fit-content}
+.tab-bar button{background:0;border:0;color:#94a3b8;padding:7px 18px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500}
 .tab-bar button.active{background:#3b82f6;color:#fff}
 
 /* ===== KPI ===== */
 .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-.kpi-card{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px}
-.kpi-card .year{font-size:11px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:1px}
+.kpi-card{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
+.kpi-card .year{font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:1px}
 .kpi-card .value{font-size:26px;font-weight:700;margin:6px 0 3px}
 .kpi-card .sub{font-size:11px;color:#64748b}
 .kpi-card.y2024 .value{color:#f59e0b}
 .kpi-card.y2025 .value{color:#3b82f6}
 .kpi-card.y2026 .value{color:#10b981}
 .kpi-card.y2026{position:relative}
-.pgi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0}
-.pgi-mini{background:#f8fafc;border-radius:6px;padding:8px 10px;border:1px solid #e2e8f0}
-.pgi-mini .pm-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#64748b}
+.pgi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #334155}
+.pgi-mini{background:#0f172a;border-radius:6px;padding:8px 10px;border:1px solid #334155}
+.pgi-mini .pm-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#94a3b8}
 .pgi-mini .pm-val{font-size:15px;font-weight:700;margin:2px 0 1px}
 .pgi-mini .pm-sub{font-size:9px;color:#64748b}
-.pgi-mini.t-pgi .pm-label{color:#7c3aed}.pgi-mini.t-pgi .pm-val{color:#8b5cf6}
-.pgi-mini.t-remain .pm-label{color:#b45309}.pgi-mini.t-remain .pm-val{color:#f59e0b}
-.pgi-mini.t-open .pm-label{color:#0284c7}.pgi-mini.t-open .pm-val{color:#0ea5e9}
+.pgi-mini.t-pgi .pm-label{color:#a78bfa}.pgi-mini.t-pgi .pm-val{color:#8b5cf6}
+.pgi-mini.t-remain .pm-label{color:#fbbf24}.pgi-mini.t-remain .pm-val{color:#f59e0b}
+.pgi-mini.t-open .pm-label{color:#38bdf8}.pgi-mini.t-open .pm-val{color:#0ea5e9}
 
 /* ===== OUD KPI ===== */
 .oud-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-.oud-card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #854d0e;position:relative}
-.oud-card .oud-label{font-size:10px;color:#b45309;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
-.oud-card .oud-val{font-size:22px;font-weight:700;color:#b45309;margin:4px 0 2px}
+.oud-card{background:#1e293b;border-radius:10px;padding:14px 16px;border:1px solid #854d0e;position:relative}
+.oud-card .oud-label{font-size:10px;color:#fbbf24;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.oud-card .oud-val{font-size:22px;font-weight:700;color:#fbbf24;margin:4px 0 2px}
 .oud-card .oud-sub{font-size:11px;color:#64748b}
 
 /* ===== AR KPI ===== */
 .ar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-.ar-card{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:14px 16px;position:relative}
+.ar-card{background:#1e293b;border-radius:10px;padding:14px 16px;border:1px solid #334155;position:relative}
 .ar-card .ar-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
 .ar-card .ar-val{font-size:22px;font-weight:700;margin:4px 0 2px}
 .ar-card .ar-sub{font-size:11px;color:#64748b}
 .ar-card.c-recv{border-color:#1e40af}
-.ar-card.c-recv .ar-label{color:#2563eb}
+.ar-card.c-recv .ar-label{color:#60a5fa}
 .ar-card.c-recv .ar-val{color:#3b82f6}
 .ar-card.c-ovd{border-color:#991b1b}
-.ar-card.c-ovd .ar-label{color:#dc2626}
+.ar-card.c-ovd .ar-label{color:#f87171}
 .ar-card.c-ovd .ar-val{color:#ef4444}
-.ar-card.c-delta .ar-label{color:#64748b}
+.ar-card.c-delta .ar-label{color:#94a3b8}
 .ar-card.c-col{border-color:#065f46}
-.ar-card.c-col .ar-label{color:#059669}
+.ar-card.c-col .ar-label{color:#34d399}
 .ar-card.c-col .ar-val{color:#10b981}
 
 /* ===== DSO KPI ===== */
 .dso-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:16px}
-.dso-card{background:#fff;border-radius:10px;padding:14px 16px;border:1px solid #134e4a}
-.dso-card .dso-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#0d9488}
+.dso-card{background:#1e293b;border-radius:10px;padding:14px 16px;border:1px solid #134e4a}
+.dso-card .dso-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#2dd4bf}
 .dso-card .dso-val{font-size:22px;font-weight:700;color:#14b8a6;margin:4px 0 2px}
 .dso-card .dso-sub{font-size:11px;color:#64748b}
-.col-group.g-dso{background:#ccfbf1;color:#0f766e}
+.col-group.g-dso{background:#042f2e;color:#2dd4bf}
 
 /* ===== Status ===== */
 .status-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
-.status-card{background:#fff;border-radius:7px;padding:12px;text-align:center;border:1px solid #e2e8f0}
-.status-card .count{font-size:22px;font-weight:700;color:#1e293b}
-.status-card .label{font-size:10px;color:#64748b;margin-top:3px;line-height:1.3}
+.status-card{background:#1e293b;border-radius:7px;padding:12px;text-align:center;border:1px solid #334155}
+.status-card .count{font-size:22px;font-weight:700;color:#f8fafc}
+.status-card .label{font-size:10px;color:#94a3b8;margin-top:3px;line-height:1.3}
 
 /* ===== Charts ===== */
 .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.chart-box{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px}
-.chart-box h3{font-size:13px;color:#64748b;margin-bottom:12px;font-weight:500}
+.chart-box{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155}
+.chart-box h3{font-size:13px;color:#94a3b8;margin-bottom:12px;font-weight:500}
 .chart-box canvas{max-height:300px}
 .chart-box-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:12px}
 .chart-box-hdr h3{margin-bottom:0}
 .div-toggle{display:flex;gap:0}
-.div-toggle-btn{padding:3px 9px;border:1px solid #e2e8f0;border-left:none;cursor:pointer;font-weight:600;background:#fff;color:#64748b;font-size:10px}
-.div-toggle-btn:first-child{border-left:1px solid #e2e8f0;border-radius:6px 0 0 6px}
+.div-toggle-btn{padding:3px 9px;border:1px solid #334155;border-left:none;cursor:pointer;font-weight:600;background:#1e293b;color:#64748b;font-size:10px}
+.div-toggle-btn:first-child{border-left:1px solid #334155;border-radius:6px 0 0 6px}
 .div-toggle-btn:last-child{border-radius:0 6px 6px 0}
 .div-toggle-btn.active{background:#3b82f6;color:#fff}
 .full-width{grid-column:1/-1}
 
 /* ===== Tables ===== */
-.table-section{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:16px}
-.table-section h3{font-size:13px;color:#64748b;margin-bottom:10px;font-weight:500}
+.table-section{background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px}
+.table-section h3{font-size:13px;color:#94a3b8;margin-bottom:10px;font-weight:500}
 table{width:100%;border-collapse:collapse;font-size:11px}
-th{background:#1a1f36;color:#e2e8f0;padding:7px 10px;text-align:left;font-weight:500;position:sticky;top:0}
-td{padding:6px 10px;border-bottom:1px solid #e2e8f0}
-tr:nth-child(even){background:#f8fafc}
-tr:nth-child(odd){background:#fff}
+th{background:#334155;color:#cbd5e1;padding:7px 10px;text-align:left;font-weight:500;position:sticky;top:0}
+td{padding:6px 10px;border-bottom:1px solid #1e293b}
+tr:nth-child(even){background:#1e293b}
+tr:nth-child(odd){background:#0f172a}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 .scroll-table{max-height:400px;overflow-y:auto;overflow-x:auto}
 /* Frozen columns (sticky left) */
 .fz{position:sticky!important;z-index:1}
-.fz0{left:0;min-width:35px;max-width:35px}.fz1{left:35px;min-width:95px;max-width:95px}.fz2{left:130px;min-width:160px}.fz3{left:290px;min-width:80px;max-width:80px}.fz4{left:370px;min-width:65px;max-width:65px;box-shadow:2px 0 6px rgba(0,0,0,.08)}
-thead .fz{z-index:4!important;background:#1a1f36}tfoot .fz{z-index:3!important}
-tbody tr:nth-child(even) .fz{background:#f8fafc}tbody tr:nth-child(odd) .fz{background:#fff}
-tfoot .fz{background:#f8fafc}
+.fz0{left:0;min-width:35px;max-width:35px}.fz1{left:35px;min-width:95px;max-width:95px}.fz2{left:130px;min-width:160px}.fz3{left:290px;min-width:80px;max-width:80px}.fz4{left:370px;min-width:65px;max-width:65px;box-shadow:2px 0 6px rgba(0,0,0,.4)}
+thead .fz{z-index:4!important}tfoot .fz{z-index:3!important}
+tbody tr:nth-child(even) .fz{background:#1e293b}tbody tr:nth-child(odd) .fz{background:#0f172a}
+tfoot .fz{background:#0f172a}
 /* Column group header */
 .col-group{text-align:center;font-size:10px;padding:4px 6px;font-weight:700;letter-spacing:.5px}
-.col-group.g-sell{background:#dbeafe;color:#1d4ed8}
-.col-group.g-pgi{background:#ede9fe;color:#6d28d9}
-.col-group.g-remain{background:#fef3c7;color:#b45309}
-.col-group.g-open{background:#e0f2fe;color:#0369a1}
-.col-group.g-oud{background:#fef3c7;color:#b45309}
-.col-group.g-ar{background:#fee2e2;color:#b91c1c}
-.col-group.g-col{background:#dcfce7;color:#15803d}
+.col-group.g-sell{background:#1e3a5f;color:#60a5fa}
+.col-group.g-pgi{background:#2e1065;color:#a78bfa}
+.col-group.g-remain{background:#451a03;color:#fbbf24}
+.col-group.g-open{background:#0c4a6e;color:#38bdf8}
+.col-group.g-oud{background:#422006;color:#fbbf24}
+.col-group.g-ar{background:#450a0a;color:#f87171}
+.col-group.g-col{background:#052e16;color:#34d399}
 </style>
 </head>
 <body>
@@ -168,9 +168,9 @@ tfoot .fz{background:#f8fafc}
 <div class="container">
 
 <!-- Main Tab Navigation -->
-<div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #e2e8f0;">
+<div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #334155;">
   <button id="mainTabST" onclick="switchMainTab('st')" style="padding:10px 24px;background:#3b82f6;color:#fff;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;">Sell-Thru Progress</button>
-  <button id="mainTabFH" onclick="switchMainTab('fh')" style="padding:10px 24px;background:#fff;color:#64748b;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;margin-left:4px;">B2C Financial Health</button>
+  <button id="mainTabFH" onclick="switchMainTab('fh')" style="padding:10px 24px;background:#1e293b;color:#64748b;border:none;border-radius:8px 8px 0 0;cursor:pointer;font-size:13px;font-weight:600;margin-left:4px;">B2C Financial Health</button>
 </div>
 
 <!-- ===== SELL-THRU TAB ===== -->
@@ -215,44 +215,44 @@ tfoot .fz{background:#f8fafc}
     <h3 style="margin:0">All Accounts — Sell-Thru · OUD · AR · Collection</h3>
     <div style="display:flex;gap:8px;align-items:center">
       <div id="arModeGroup" style="display:flex;gap:0;font-size:11px">
-        <button class="ar-mode-btn active" data-mode="all" style="padding:4px 10px;border:1px solid #e2e8f0;border-radius:6px 0 0 6px;cursor:pointer;font-weight:600;background:#e2e8f0;color:#1e293b;font-size:11px">All</button>
-        <button class="ar-mode-btn" data-mode="sell" style="padding:4px 10px;border:1px solid #e2e8f0;border-left:none;cursor:pointer;font-weight:600;background:#fff;color:#64748b;font-size:11px">Sell-Thru Only</button>
-        <button class="ar-mode-btn" data-mode="ar" style="padding:4px 10px;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-weight:600;background:#fff;color:#64748b;font-size:11px">AR Only <span id="arOnlyCount" style="color:#64748b">(0)</span></button>
+        <button class="ar-mode-btn active" data-mode="all" style="padding:4px 10px;border:1px solid #334155;border-radius:6px 0 0 6px;cursor:pointer;font-weight:600;background:#334155;color:#e2e8f0;font-size:11px">All</button>
+        <button class="ar-mode-btn" data-mode="sell" style="padding:4px 10px;border:1px solid #334155;border-left:none;cursor:pointer;font-weight:600;background:#1e293b;color:#64748b;font-size:11px">Sell-Thru Only</button>
+        <button class="ar-mode-btn" data-mode="ar" style="padding:4px 10px;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-weight:600;background:#1e293b;color:#64748b;font-size:11px">AR Only <span id="arOnlyCount" style="color:#64748b">(0)</span></button>
       </div>
-      <input type="text" id="tblSearch" placeholder="Search Account Name..." style="padding:5px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:6px;color:#1e293b;font-size:12px;width:220px;outline:none">
+      <input type="text" id="tblSearch" placeholder="Search Account Name..." style="padding:5px 10px;background:#1e293b;border:1px solid #334155;border-radius:6px;color:#e2e8f0;font-size:12px;width:220px;outline:none">
       <button id="btnExcelDl" style="padding:5px 14px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap">Export Excel</button>
-      <button id="btnRsmSync" onclick="_rsmSyncNow()" style="padding:5px 12px;background:#dbeafe;color:#2563eb;border:1px solid #3b82f6;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap" title="Save RSM FCST to cloud — auto-sync across all devices">☁️ RSM Sync</button>
-      <button onclick="_rsmTokenSetup()" style="padding:5px 10px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="One-time setup (GitHub token)">⚙️ Sync Setup</button>
+      <button id="btnRsmSync" onclick="_rsmSyncNow()" style="padding:5px 12px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;border-radius:6px;font-size:12px;cursor:pointer;white-space:nowrap" title="Save RSM FCST to cloud — auto-sync across all devices">☁️ RSM Sync</button>
+      <button onclick="_rsmTokenSetup()" style="padding:5px 10px;background:#0f172a;color:#475569;border:1px solid #334155;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="One-time setup (GitHub token)">⚙️ Sync Setup</button>
     </div>
   </div>
   <div class="scroll-table" style="max-height:600px;overflow:auto"><table id="topTable"></table></div>
 </div>
 
 <!-- Meeting Summary -->
-<div style="background:#fff;border-radius:12px;padding:20px 24px;margin:0 0 24px 0;">
+<div style="background:#1e293b;border-radius:12px;padding:20px 24px;margin:0 0 24px 0;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 16px 0;">
-    <h3 style="margin:0;color:#64748b;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">📝 Meeting Summary</h3>
+    <h3 style="margin:0;color:#94a3b8;font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;">📝 Meeting Summary</h3>
     <div style="display:flex;gap:6px;align-items:center;">
-      <span id="memoSyncStatus" style="font-size:10px;color:#64748b;margin-right:4px;"></span>
-      <button id="btnMemoSync" onclick="_memoSyncNow()" style="padding:4px 10px;background:#dbeafe;color:#2563eb;border:1px solid #3b82f6;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="Save memo to cloud — sync across all devices">☁️ Memo Sync</button>
+      <span id="memoSyncStatus" style="font-size:10px;color:#475569;margin-right:4px;"></span>
+      <button id="btnMemoSync" onclick="_memoSyncNow()" style="padding:4px 10px;background:#1e3a5f;color:#60a5fa;border:1px solid #3b82f6;border-radius:6px;font-size:11px;cursor:pointer;white-space:nowrap" title="Save memo to cloud — sync across all devices">☁️ Memo Sync</button>
     </div>
   </div>
   <div style="display:flex;gap:16px;">
     <div style="flex:1;">
-      <div style="font-size:11px;font-weight:700;color:#2563eb;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;">OR</div>
+      <div style="font-size:11px;font-weight:700;color:#60a5fa;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;">OR</div>
       <textarea id="memo-or" placeholder="Enter OR memo here..."
-        style="width:100%;min-height:140px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit;outline:none;"
+        style="width:100%;min-height:140px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit;outline:none;"
         oninput="_memoSave('or',this.value)"></textarea>
     </div>
     <div style="flex:1;">
-      <div style="font-size:11px;font-weight:700;color:#7c3aed;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;">IR</div>
+      <div style="font-size:11px;font-weight:700;color:#a78bfa;letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase;">IR</div>
       <textarea id="memo-ir" placeholder="Enter IR memo here..."
-        style="width:100%;min-height:140px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit;outline:none;"
+        style="width:100%;min-height:140px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;resize:vertical;box-sizing:border-box;font-family:inherit;outline:none;"
         oninput="_memoSave('ir',this.value)"></textarea>
     </div>
   </div>
   <div style="display:flex;justify-content:flex-end;margin-top:8px;">
-    <button onclick="_memoClear()" style="background:transparent;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Clear All</button>
+    <button onclick="_memoClear()" style="background:transparent;border:1px solid #334155;color:#64748b;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer;">Clear All</button>
   </div>
 </div>
 
@@ -264,26 +264,26 @@ tfoot .fz{background:#f8fafc}
 <!-- FH Filter Bar -->
 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
   <div>
-    <span style="font-size:11px;font-weight:600;color:#1e293b;margin-right:6px;">Grade</span>
+    <span style="font-size:11px;font-weight:600;color:#e2e8f0;margin-right:6px;">Grade</span>
     <div id="fhGradeFilter" style="display:inline-flex;flex-wrap:wrap;gap:4px;"></div>
   </div>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
     <div style="display:flex;gap:0;">
       <button id="fhRevYtdBtn" onclick="fhSetRevMode('ytd')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">YTD</button>
-      <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
+      <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
     </div>
     <div style="display:flex;gap:0;">
       <button id="fhDsoSimpleBtn" onclick="fhSetDsoMode('simple')" style="padding:5px 14px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">DSO Simple</button>
-      <button id="fhDsoAgedBtn" onclick="fhSetDsoMode('aged')" style="padding:5px 14px;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">DSO Aged</button>
+      <button id="fhDsoAgedBtn" onclick="fhSetDsoMode('aged')" style="padding:5px 14px;background:#1e293b;color:#94a3b8;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">DSO Aged</button>
     </div>
     <div style="display:flex;align-items:center;gap:5px;">
-      <span style="font-size:11px;color:#64748b;">📅</span>
-      <select id="fhDateSelect" onchange="fhSetDate(this.value)" style="padding:5px 8px;background:#f8fafc;color:#1e293b;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:11px;outline:none;">
+      <span style="font-size:11px;color:#94a3b8;">📅</span>
+      <select id="fhDateSelect" onchange="fhSetDate(this.value)" style="padding:5px 8px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:11px;outline:none;">
         <option value="latest">Latest</option>
       </select>
     </div>
-    <button id="fhCompareBtn" onclick="fhToggleCompare()" style="padding:5px 14px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Compare YTD vs T12M">↔ Compare</button>
-    <button onclick="fhReset()" style="padding:5px 14px;background:#f8fafc;color:#64748b;border:1px solid #e2e8f0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Reset all filters">↺ Reset</button>
+    <button id="fhCompareBtn" onclick="fhToggleCompare()" style="padding:5px 14px;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Compare YTD vs T12M">↔ Compare</button>
+    <button onclick="fhReset()" style="padding:5px 14px;background:#0f172a;color:#94a3b8;border:1px solid #334155;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;" title="Reset all filters">↺ Reset</button>
   </div>
 </div>
 
@@ -292,53 +292,53 @@ tfoot .fz{background:#f8fafc}
 
 <!-- FH Compare View -->
 <div id="fhCompareWrap" style="display:none;">
-  <div style="background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:16px;">
+  <div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <h3 style="margin:0;font-size:13px;color:#1e293b;font-weight:500;">YTD vs T12M Comparison <span style="color:#64748b;font-size:11px;">— Simple DSO basis</span></h3>
-      <span style="font-size:10px;color:#64748b;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%)</span>
+      <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">YTD vs T12M Comparison <span style="color:#94a3b8;font-size:11px;">— Simple DSO basis</span></h3>
+      <span style="font-size:10px;color:#94a3b8;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%)</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
-        <div style="font-size:11px;color:#2563eb;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">◀ YTD (Year-to-Date)</div>
+        <div style="font-size:11px;color:#60a5fa;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">◀ YTD (Year-to-Date)</div>
         <div id="fhCompareYtdWrap" style="position:relative;height:380px;"></div>
       </div>
       <div>
-        <div style="font-size:11px;color:#7c3aed;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">T12M (Trailing T12M) ▶</div>
+        <div style="font-size:11px;color:#a78bfa;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">T12M (Trailing T12M) ▶</div>
         <div id="fhCompareT12mWrap" style="position:relative;height:380px;"></div>
       </div>
     </div>
   </div>
-  <div style="background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:16px;">
-    <h3 style="margin:0 0 12px;font-size:13px;color:#1e293b;font-weight:500;">Quadrant Shifts <span id="fhMoveCount" style="color:#64748b;font-size:11px;"></span></h3>
+  <div style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
+    <h3 style="margin:0 0 12px;font-size:13px;color:#e2e8f0;font-weight:500;">Quadrant Shifts <span id="fhMoveCount" style="color:#94a3b8;font-size:11px;"></span></h3>
     <div style="overflow-x:auto;max-height:360px;overflow-y:auto;"><table id="fhMoveTable" style="width:100%;border-collapse:collapse;font-size:11px;"></table></div>
   </div>
 </div>
 
 <!-- Advisory Panel (전체 FH 탭에서 접근 가능 — CompareWrap 밖) -->
-<div id="fhAdvisoryPanel" style="display:none;background:#f8fafc;border-radius:10px;border:1px solid #7c3aed;margin-bottom:16px;overflow:hidden;">
-  <div style="background:linear-gradient(135deg,#ede9fe,#f5f3ff);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
+<div id="fhAdvisoryPanel" style="display:none;background:#0f172a;border-radius:10px;border:1px solid #7c3aed;margin-bottom:16px;overflow:hidden;">
+  <div style="background:linear-gradient(135deg,#1e1b4b,#1e293b);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;gap:12px;">
       <span id="fhAdvSignal" style="font-size:22px;"></span>
       <div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span id="fhAdvName" style="font-size:14px;font-weight:700;color:#1e293b;"></span>
+          <span id="fhAdvName" style="font-size:14px;font-weight:700;color:#e2e8f0;"></span>
           <span id="fhAdvInvBadge" style="font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700;"></span>
         </div>
-        <div id="fhAdvHeadline" style="font-size:11px;color:#7c3aed;margin-top:2px;"></div>
+        <div id="fhAdvHeadline" style="font-size:11px;color:#a78bfa;margin-top:2px;"></div>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
-      <span id="fhAdvGenerated" style="font-size:10px;color:#64748b;"></span>
+      <span id="fhAdvGenerated" style="font-size:10px;color:#475569;"></span>
       <div style="display:flex;gap:0;">
         <button id="fhAdvLangEn" onclick="fhAdvSetLang('en')" style="padding:3px 10px;background:#3b82f6;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:11px;font-weight:700;">ENG</button>
-        <button id="fhAdvLangKo" onclick="fhAdvSetLang('ko')" style="padding:3px 10px;background:#fff;color:#64748b;border:1px solid #e2e8f0;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:11px;font-weight:700;">KOR</button>
+        <button id="fhAdvLangKo" onclick="fhAdvSetLang('ko')" style="padding:3px 10px;background:#1e293b;color:#64748b;border:1px solid #334155;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:11px;font-weight:700;">KOR</button>
       </div>
-      <button onclick="fhCloseAdvisory()" style="padding:4px 12px;background:#e2e8f0;color:#64748b;border:none;border-radius:6px;cursor:pointer;font-size:11px;">✕ Close</button>
+      <button onclick="fhCloseAdvisory()" style="padding:4px 12px;background:#334155;color:#94a3b8;border:none;border-radius:6px;cursor:pointer;font-size:11px;">✕ Close</button>
     </div>
   </div>
   <!-- 탭 -->
-  <div style="display:flex;border-bottom:1px solid #e2e8f0;">
-    <button id="fhAdvTab0" onclick="fhAdvSwitchTab(0)" style="flex:1;padding:10px;background:#ede9fe;color:#6d28d9;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid #7c3aed;">💰 Finance</button>
+  <div style="display:flex;border-bottom:1px solid #1e293b;">
+    <button id="fhAdvTab0" onclick="fhAdvSwitchTab(0)" style="flex:1;padding:10px;background:#1e1b4b;color:#a78bfa;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid #7c3aed;">💰 Finance</button>
     <button id="fhAdvTab1" onclick="fhAdvSwitchTab(1)" style="flex:1;padding:10px;background:transparent;color:#64748b;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid transparent;">📊 Sales</button>
     <button id="fhAdvTab2" onclick="fhAdvSwitchTab(2)" style="flex:1;padding:10px;background:transparent;color:#64748b;border:none;cursor:pointer;font-size:12px;font-weight:600;border-bottom:2px solid transparent;">📋 Synthesis</button>
   </div>
@@ -349,38 +349,38 @@ tfoot .fz{background:#f8fafc}
 </div>
 
 <!-- FH Chart -->
-<div id="fhChartBox" style="background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:16px;">
+<div id="fhChartBox" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:16px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-    <h3 style="margin:0;font-size:13px;color:#1e293b;font-weight:500;">Financial Health Matrix <span id="fhChartSubtitle" style="color:#64748b;font-size:11px;"></span></h3>
-    <span style="font-size:10px;color:#64748b;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%) vs selected acct avg &nbsp;|&nbsp; Bubble: AR Balance</span>
+    <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Financial Health Matrix <span id="fhChartSubtitle" style="color:#94a3b8;font-size:11px;"></span></h3>
+    <span style="font-size:10px;color:#94a3b8;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%) vs selected acct avg &nbsp;|&nbsp; Bubble: AR Balance</span>
   </div>
   <div id="fhChartWrap" style="position:relative;height:480px;"></div>
 </div>
 
 <!-- FH Table -->
-<div id="fhTableBox" style="background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:24px;">
+<div id="fhTableBox" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:24px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-    <h3 style="margin:0;font-size:13px;color:#1e293b;font-weight:500;">Account Detail <span id="fhTableTitle" style="color:#64748b;font-size:11px;"></span></h3>
-    <button onclick="fhClearSelection()" style="padding:4px 12px;background:#e2e8f0;color:#1e293b;border:none;border-radius:6px;font-size:11px;cursor:pointer;">Show All</button>
+    <h3 style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Account Detail <span id="fhTableTitle" style="color:#94a3b8;font-size:11px;"></span></h3>
+    <button onclick="fhClearSelection()" style="padding:4px 12px;background:#334155;color:#e2e8f0;border:none;border-radius:6px;font-size:11px;cursor:pointer;">Show All</button>
   </div>
   <div style="overflow-x:auto;max-height:400px;overflow-y:auto;"><table id="fhTable" style="width:100%;border-collapse:collapse;font-size:11px;"></table></div>
 </div>
 
 <!-- FH Trend Panel -->
-<div id="fhTrendPanel" style="background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);border-radius:10px;padding:16px;margin-bottom:24px;display:none;">
+<div id="fhTrendPanel" style="background:#1e293b;border-radius:10px;padding:16px;border:1px solid #334155;margin-bottom:24px;display:none;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-    <h3 id="fhTrendTitle" style="margin:0;font-size:13px;color:#1e293b;font-weight:500;">Trend</h3>
-    <button onclick="fhCloseTrend()" style="padding:3px 10px;background:#e2e8f0;color:#1e293b;border:none;border-radius:5px;cursor:pointer;font-size:11px;">✕ Close</button>
+    <h3 id="fhTrendTitle" style="margin:0;font-size:13px;color:#e2e8f0;font-weight:500;">Trend</h3>
+    <button onclick="fhCloseTrend()" style="padding:3px 10px;background:#334155;color:#e2e8f0;border:none;border-radius:5px;cursor:pointer;font-size:11px;">✕ Close</button>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-    <div><div style="font-size:10px;color:#64748b;margin-bottom:6px;">Overdue Rate (%)</div><div id="fhTrendChartOvdWrap" style="height:180px;"></div></div>
-    <div><div style="font-size:10px;color:#64748b;margin-bottom:6px;">AR Balance vs Overdue (SAR)</div><div id="fhTrendChartBalWrap" style="height:180px;"></div></div>
+    <div><div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">Overdue Rate (%)</div><div id="fhTrendChartOvdWrap" style="height:180px;"></div></div>
+    <div><div style="font-size:10px;color:#94a3b8;margin-bottom:6px;">AR Balance vs Overdue (SAR)</div><div id="fhTrendChartBalWrap" style="height:180px;"></div></div>
   </div>
 </div>
 
 </div><!-- /fhTab -->
 
-<div id="data-loading" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#f8fafc;z-index:9999;display:flex;align-items:center;justify-content:center"><div style="text-align:center;color:#64748b"><div style="font-size:18px;font-weight:600;margin-bottom:8px">Loading Dashboard Data...</div><div style="font-size:12px">Please wait</div><div style="margin-top:16px;width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:16px auto 0"></div></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+<div id="data-loading" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center"><div style="text-align:center;color:#94a3b8"><div style="font-size:18px;font-weight:600;margin-bottom:8px">Loading Dashboard Data...</div><div style="font-size:12px">Please wait</div><div style="margin-top:16px;width:40px;height:40px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:spin 1s linear infinite;margin:16px auto 0"></div></div></div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <script>
 // ======== DATA ========
 var RAW; // loaded asynchronously from data.json
@@ -764,7 +764,7 @@ function buildFilterBar(){
       menu.style.minWidth='280px';
       const srch=document.createElement('input');
       srch.type='text'; srch.placeholder='Search account...';
-      srch.style.cssText='width:100%;padding:5px 8px;margin-bottom:4px;background:#fff;border:1px solid #e2e8f0;border-radius:4px;color:#1e293b;font-size:11px;outline:none;box-sizing:border-box';
+      srch.style.cssText='width:100%;padding:5px 8px;margin-bottom:4px;background:#1e293b;border:1px solid #334155;border-radius:4px;color:#e2e8f0;font-size:11px;outline:none;box-sizing:border-box';
       srch.onclick=function(e){e.stopPropagation();};
       srch.oninput=function(){
         const q=srch.value.toLowerCase();
@@ -806,16 +806,16 @@ function buildFilterBar(){
   // Period picker
   const pdv=document.createElement('div'); pdv.className='filter-divider'; bar.appendChild(pdv);
   const periodWrap=document.createElement('div');
-  periodWrap.style.cssText='display:flex;align-items:center;gap:5px;font-size:11px;color:#334155';
-  periodWrap.innerHTML='<span style="font-weight:600;color:#1e293b;margin-right:2px">Period</span>';
+  periodWrap.style.cssText='display:flex;align-items:center;gap:5px;font-size:11px;color:#cbd5e1';
+  periodWrap.innerHTML='<span style="font-weight:600;color:#e2e8f0;margin-right:2px">Period</span>';
   const inFrom=document.createElement('input');
   inFrom.type='text'; inFrom.value=dayFrom; inFrom.placeholder='MM-DD';
-  inFrom.style.cssText='width:58px;padding:3px 6px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:5px;color:#1e293b;font-size:11px;text-align:center;outline:none';
+  inFrom.style.cssText='width:58px;padding:3px 6px;background:#0f172a;border:1px solid #475569;border-radius:5px;color:#e2e8f0;font-size:11px;text-align:center;outline:none';
   inFrom.onclick=function(e){e.stopPropagation();};
   const sep=document.createElement('span'); sep.textContent='~'; sep.style.cssText='color:#64748b;font-weight:600';
   const inTo=document.createElement('input');
   inTo.type='text'; inTo.value=dayTo; inTo.placeholder='MM-DD';
-  inTo.style.cssText='width:58px;padding:3px 6px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:5px;color:#1e293b;font-size:11px;text-align:center;outline:none';
+  inTo.style.cssText='width:58px;padding:3px 6px;background:#0f172a;border:1px solid #475569;border-radius:5px;color:#e2e8f0;font-size:11px;text-align:center;outline:none';
   inTo.onclick=function(e){e.stopPropagation();};
   function applyPeriod(){
     var f=inFrom.value.trim(), t=inTo.value.trim();
@@ -828,7 +828,7 @@ function buildFilterBar(){
   inTo.onkeydown=function(e){if(e.key==='Enter') applyPeriod();};
   const ytdBtn=document.createElement('button');
   ytdBtn.textContent='YTD';
-  ytdBtn.style.cssText='background:#e2e8f0;border:none;color:#3b82f6;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600';
+  ytdBtn.style.cssText='background:#334155;border:none;color:#3b82f6;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600';
   ytdBtn.onclick=function(){
     dayFrom='01-01';
     var latest=RAW.sell_thru_date||'01-01';
@@ -838,7 +838,7 @@ function buildFilterBar(){
   };
   const fyBtn=document.createElement('button');
   fyBtn.textContent='Full Year';
-  fyBtn.style.cssText='background:#e2e8f0;border:none;color:#64748b;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600';
+  fyBtn.style.cssText='background:#334155;border:none;color:#94a3b8;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600';
   fyBtn.onclick=function(){ dayFrom='01-01'; dayTo='12-31'; renderAll(); };
   periodWrap.appendChild(inFrom); periodWrap.appendChild(sep); periodWrap.appendChild(inTo);
   periodWrap.appendChild(ytdBtn); periodWrap.appendChild(fyBtn);
@@ -924,7 +924,7 @@ function renderKPI(){
       function badge(lbl,pct,color){
         if(pct===null) return '';
         var c=color||(pct>=0?'#10b981':'#ef4444'), arrow=pct>=0?'\u25b2':'\u25bc';
-        return '<div style="flex:1;padding:5px 6px;background:#f8fafc;border-radius:6px;text-align:center;">'
+        return '<div style="flex:1;padding:5px 6px;background:#0f172a;border-radius:6px;text-align:center;">'
           +'<div style="font-size:9px;color:#64748b;margin-bottom:2px;line-height:1.2;">'+lbl+(periodLabel?'<br><span style="font-size:8px;opacity:.7;">'+periodLabel+'</span>':'')+'</div>'
           +'<div style="font-size:13px;font-weight:700;color:'+c+';">'+arrow+Math.abs(pct).toFixed(1)+'%</div>'
           +'</div>';
@@ -936,24 +936,24 @@ function renderKPI(){
       h+=renderPgiSubCards(isVal,lb);
       // RSM FCST block with team breakdown (Value + Qty 모두 표시 — 2026-07-05 형님 지시)
       if(true){
-        h+='<div style="margin-top:8px;padding:8px 10px;background:#f8fafc;border-radius:6px;border-left:3px solid #3b82f6;">';
+        h+='<div style="margin-top:8px;padding:8px 10px;background:#0f172a;border-radius:6px;border-left:3px solid #3b82f6;">';
         h+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
-        h+='<div style="font-size:10px;font-weight:700;color:#2563eb;letter-spacing:.5px;">RSM FCST</div>';
-        h+='<div style="font-size:16px;font-weight:700;color:#2563eb;">'+(rsmTotal?fmt(rsmTotal):'\u2014')+'</div>';
+        h+='<div style="font-size:10px;font-weight:700;color:#60a5fa;letter-spacing:.5px;">RSM FCST</div>';
+        h+='<div style="font-size:16px;font-weight:700;color:#60a5fa;">'+(rsmTotal?fmt(rsmTotal):'\u2014')+'</div>';
         h+='</div>';
-        if(rsmTotal) h+='<div style="font-size:10px;color:#64748b;margin-bottom:6px;">'+fmtF(rsmTotal)+' '+(isVal?'SAR':'Units')+'</div>';
+        if(rsmTotal) h+='<div style="font-size:10px;color:#475569;margin-bottom:6px;">'+fmtF(rsmTotal)+' '+(isVal?'SAR':'Units')+'</div>';
         var tmOrder=['OR','OR_Others','IR','IR_Others','Showrooms','SME'];
         var btm=_tblRsmByTeam;
         var tmKeys=Object.keys(btm).sort(function(a,b){var ia=tmOrder.indexOf(a),ib=tmOrder.indexOf(b);ia=ia<0?99:ia;ib=ib<0?99:ib;return ia-ib;});
         if(tmKeys.length>1){
-          var tmColors={'OR':'#10b981','OR_Others':'#059669','IR':'#f59e0b','IR_Others':'#b45309','Showrooms':'#7c3aed','SME':'#db2777'};
+          var tmColors={'OR':'#10b981','OR_Others':'#6ee7b7','IR':'#f59e0b','IR_Others':'#fbbf24','Showrooms':'#a78bfa','SME':'#f472b6'};
           h+='<div style="display:flex;flex-wrap:wrap;gap:3px;">';
           tmKeys.forEach(function(tm){
             var tv=btm[tm]||0;
             var pct=rsmTotal?(tv/rsmTotal*100):0;
-            var tc=tmColors[tm]||'#64748b';
-            h+='<div style="flex:1;min-width:70px;padding:3px 5px;background:#fff;border-radius:4px;border-left:2px solid '+tc+';">';
-            h+='<div style="font-size:8px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+teamLabel(tm)+'</div>';
+            var tc=tmColors[tm]||'#94a3b8';
+            h+='<div style="flex:1;min-width:70px;padding:3px 5px;background:#1e293b;border-radius:4px;border-left:2px solid '+tc+';">';
+            h+='<div style="font-size:8px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+teamLabel(tm)+'</div>';
             h+='<div style="font-size:11px;font-weight:600;color:'+tc+';">'+fmt(tv)+'</div>';
             h+='<div style="font-size:8px;color:#64748b;">'+pct.toFixed(1)+'%</div>';
             h+='</div>';
@@ -1210,7 +1210,7 @@ function monthBoundaryAnnotations(){
   var out={};
   for(var i=0;i<11;i++){
     var x=i*2+1.5;
-    out['mb'+i]={type:'line', xMin:x, xMax:x, borderColor:'#94a3b8', borderWidth:1, borderDash:[4,4]};
+    out['mb'+i]={type:'line', xMin:x, xMax:x, borderColor:'#ffffff', borderWidth:1, borderDash:[4,4]};
   }
   return out;
 }
@@ -1225,7 +1225,7 @@ function renderMonthly(){
       ds=years.map(function(yr){return{
         label:String(yr),
         data:months.map(function(m){return data.filter(function(r){return r[C.Y]===yr&&r[C.M]===m;}).reduce(function(s,r){return s+gv(r);},0);}),
-        borderColor:CY[yr]||'#64748b',backgroundColor:(CY[yr]||'#64748b')+'33',
+        borderColor:CY[yr]||'#94a3b8',backgroundColor:(CY[yr]||'#94a3b8')+'33',
         tension:.3,fill:false,pointRadius:3,borderWidth:2,
         datalabels:{display:false}
       };});
@@ -1239,7 +1239,7 @@ function renderMonthly(){
       }
     };
   });
-  charts['monthly']=new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{display:true}},scales:{x:{ticks:{color:'#64748b'},grid:{color:'#e2e8f0'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}}}}});
+  charts['monthly']=new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{display:true}},scales:{x:{ticks:{color:'#64748b'},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== IN-CHART DIVISION TOGGLE (By Team / By Category) ========
@@ -1272,8 +1272,8 @@ function renderDivToggle(elId){
 function renderTeam(){
   dc('team');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(),
-      ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#64748b')+'cc',borderRadius:3};});
-  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#334155',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}}}});
+      ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
+  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // By Category has its own independent team-selection state (SEL_team1) —
@@ -1311,8 +1311,8 @@ function renderCat(){
   dc('cat');
   renderTeamToggle1('divToggleCat');
   var data=getFilteredCustomTeam(SEL_team1), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
-      ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#64748b')+'cc',borderRadius:3};});
-  charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#334155',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}}}}});
+      ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
+  charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#cbd5e1',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // ======== Independent compare panel: By Category (Compare) ========
@@ -1350,8 +1350,8 @@ function renderCat2(){
   dc('cat2');
   renderTeamToggle2('teamToggleCat2');
   var data=getFilteredCustomTeam(SEL_team2), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
-      ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#64748b')+'cc',borderRadius:3};});
-  charts['cat2']=new Chart(document.getElementById('catChart2'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#334155',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}}}}});
+      ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#94a3b8')+'cc',borderRadius:3};});
+  charts['cat2']=new Chart(document.getElementById('catChart2'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'top',color:'#cbd5e1',font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#94a3b8',font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 function renderGrowth(){
@@ -1360,7 +1360,7 @@ function renderGrowth(){
   for(var i=0;i<years.length-1;i++) pairs.push([years[i],years[i+1]]);
   if(!pairs.length){charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{datalabels:{display:false}}}});return;}
   var ds=pairs.map(function(p){var y1=p[0],y2=p[1],g=teams.map(function(t){var v1=data.filter(function(r){return r[C.Y]===y1&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0),v2=data.filter(function(r){return r[C.Y]===y2&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);return v1?((v2-v1)/v1*100):null;});return{label:y1+'\u2192'+y2+' Growth %',data:g,backgroundColor:g.map(function(v){return v!=null&&v>=0?'#10b981cc':'#ef4444cc';}),borderRadius:3};});
-  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?'#10b981':'#ef4444';},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return v+'%';}},grid:{color:'#e2e8f0'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}}}});
+  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?'#10b981':'#ef4444';},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return v+'%';}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // ======== OUD CHARTS ========
@@ -1384,7 +1384,7 @@ function renderOudTeamChart(){
   });
   var teams=Object.keys(teamData).sort(function(a,b){return (isVal?teamData[b].v:teamData[b].q)-(isVal?teamData[a].v:teamData[a].q);});
   var vals=teams.map(function(t){return isVal?teamData[t].v:teamData[t].q;});
-  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#b45309cc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#b45309',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}}}});
+  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#fbbf24cc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#fbbf24',font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 // OUD Monthly Trend (Aug'25~Jul'26) \u2014 2026-08-09 \ud615\ub2d8 \ud655\uc815 \uaddc\uce59: \uc6d4 \ub9c8\uc9c0\ub9c9\ub0a0 \uc815\ud655 \uc2a4\ub0c5\uc0f7\uc774
@@ -1448,11 +1448,11 @@ function renderOudDeltaChart(){
   if(ds.length){
     ds[ds.length-1].datalabels={
       display:true, anchor:'end', align:'top', offset:2,
-      color:'#1e293b', font:{size:9,weight:'700'},
+      color:'#e2e8f0', font:{size:9,weight:'700'},
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#64748b',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{font:{size:9},color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#0f172a' : '#64748b'; }},grid:{color:'#e2e8f0'}},y:{stacked:true,grace:'10%',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}}}}});
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{font:{size:9},color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#ffffff' : '#64748b'; }},grid:{color:'#1e293b'}},y:{stacked:true,grace:'10%',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
@@ -1544,7 +1544,7 @@ function renderColSnapshotChart(){
     {label:'Collection (MTD)',data:teams.map(function(t){return teamCol[t]||0;}),backgroundColor:'#10b981cc',borderRadius:3},
     {label:'Receivable (Balance)',data:teams.map(function(t){return teamBal[t]||0;}),backgroundColor:'#3b82f6cc',borderRadius:3},
     {label:'Overdue',data:teams.map(function(t){return teamOvd[t]||0;}),backgroundColor:'#ef4444cc',borderRadius:3},
-  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{title:{display:true,text:'As of '+col.date,color:'#64748b',font:{size:10,weight:'400'},padding:{bottom:6}},legend:{labels:{color:'#64748b',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#334155',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}},y:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{title:{display:true,text:'As of '+col.date,color:'#64748b',font:{size:10,weight:'400'},padding:{bottom:6}},legend:{labels:{color:'#94a3b8',font:{size:11}}},datalabels:{anchor:'end',align:'end',color:'#cbd5e1',font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},y:{ticks:{color:'#94a3b8',font:{size:10}},grid:{display:false}}}}});
 }
 
 var _colTrendTeamState={sel:null};
@@ -1612,8 +1612,8 @@ function renderColTrendChart(){
     {type:'bar', label:'_rank2', data:slotData(1), backgroundColor:slotColor(1), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:1, yAxisID:'y'},
     {type:'line', label:colMeta.name, data:colData, borderColor:colMeta.vivid, backgroundColor:colMeta.vivid+'33', pointBackgroundColor:colMeta.vivid, tension:.3, fill:false, pointRadius:3, borderWidth:2, spanGaps:false, order:0, yAxisID:'y1', datalabels:{display:false}},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{
-    legend:{labels:{color:'#64748b',font:{size:10},generateLabels:function(){
-      return ['bal','ovd','col'].map(function(m){ var meta=COL_TREND_METRIC_META[m]; return {text:meta.name, fillStyle:meta.vivid, strokeStyle:meta.vivid, fontColor:'#64748b'}; });
+    legend:{labels:{color:'#94a3b8',font:{size:10},generateLabels:function(){
+      return ['bal','ovd','col'].map(function(m){ var meta=COL_TREND_METRIC_META[m]; return {text:meta.name, fillStyle:meta.vivid, strokeStyle:meta.vivid, fontColor:'#94a3b8'}; });
     }}},
     tooltip:{callbacks:{label:function(ctx){
       if(ctx.dataset.label===colMeta.name) return colMeta.name+': '+fmt(ctx.parsed.y);
@@ -1640,9 +1640,9 @@ function renderColTrendChart(){
   },scales:{
     x:{ticks:{font:{size:9},color:function(ctx){
       var lbl=labels[ctx.index]||'';
-      return lbl.indexOf("'26")!==-1 ? '#0f172a' : '#64748b';
-    }},grid:{color:'#e2e8f0'}},
-    y:{position:'left',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#e2e8f0'}},
+      return lbl.indexOf("'26")!==-1 ? '#ffffff' : '#64748b';
+    }},grid:{color:'#1e293b'}},
+    y:{position:'left',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},
     y1:{position:'right',grace:'15%',ticks:{color:colMeta.vivid,callback:function(v){return fmt(v);}},grid:{display:false}}
   }}});
 }
@@ -1981,24 +1981,24 @@ function buildTable(arr){
   var hasPgiPrev=hasPgi&&!!_proPrev(RAW.pgi), hasRemPrev=hasRemain&&!!_proPrev(RAW.remain), hasOpnPrev=hasOpen&&!!_proPrev(RAW.open);
   var thStyle='cursor:pointer;user-select:none;';
   var arrow=function(key){
-    if(_sortCol!==key) return ' <span style="color:#64748b;font-size:9px">\u2195</span>';
+    if(_sortCol!==key) return ' <span style="color:#475569;font-size:9px">\u2195</span>';
     return _sortAsc?' <span style="color:#3b82f6">\u25B2</span>':' <span style="color:#3b82f6">\u25BC</span>';
   };
   var unitLabel=isVal?'SAR':'QTY';
   // Column group headers
-  var h='<thead style="position:sticky;top:0;z-index:2;background:#1a1f36">';
+  var h='<thead style="position:sticky;top:0;z-index:2;background:#0f172a">';
   h+='<tr><th rowspan="2" class="fz fz0">#</th>';
   h+='<th rowspan="2" class="fz fz1" style="'+thStyle+'" onclick="sortTable(\'id\')">ID'+arrow('id')+'</th>';
   h+='<th rowspan="2" class="fz fz2" style="'+thStyle+'" onclick="sortTable(\'nm\')">Account'+arrow('nm')+'</th>';
   h+='<th rowspan="2" class="fz fz3" style="'+thStyle+'" onclick="sortTable(\'tm\')">Team'+arrow('tm')+'</th>';
   h+='<th rowspan="2" class="fz fz4" style="'+thStyle+'" onclick="sortTable(\'st\')">Status'+arrow('st')+'</th>';
-  h+='<th rowspan="2" class="col-group" style="background:#dbeafe;color:#2563eb;cursor:pointer;" onclick="sortTable(\'rsm_fcst\')">RSM FCST ('+(isVal?'SAR':'Set')+')'+arrow('rsm_fcst')+'</th>';
+  h+='<th rowspan="2" class="col-group" style="background:#1e3a5f;color:#60a5fa;cursor:pointer;" onclick="sortTable(\'rsm_fcst\')">RSM FCST ('+(isVal?'SAR':'Set')+')'+arrow('rsm_fcst')+'</th>';
   h+='<th colspan="3" class="col-group g-sell">SELL-THRU ('+unitLabel+')</th>';
   if(hasPgi) h+='<th colspan="'+(hasPgiPrev?2:1)+'" class="col-group g-pgi">PGI ('+unitLabel+')</th>';
   if(hasRemain) h+='<th colspan="'+(hasRemPrev?2:1)+'" class="col-group g-remain">REMAIN ('+unitLabel+')</th>';
   if(hasOpen) h+='<th colspan="'+(hasOpnPrev?2:1)+'" class="col-group g-open">OPEN ('+unitLabel+')</th>';
   if(hasOud) h+='<th colspan="2" class="col-group g-oud">OUD</th>';
-  if(hasAr) h+='<th colspan="1" class="col-group" style="background:#e0e7ff;color:#4f46e5;font-weight:700;">CREDIT LIMIT</th>';
+  if(hasAr) h+='<th colspan="1" class="col-group" style="background:#1e1a4a;color:#818cf8;font-weight:700;">CREDIT LIMIT</th>';
   if(hasAr) h+='<th colspan="5" class="col-group g-ar">AR / OVERDUE (SAR)</th>';
   if(hasCol) h+='<th colspan="2" class="col-group g-col">COLLECTION (SAR)</th>';
   if(hasAr) h+='<th colspan="2" class="col-group g-dso">DSO (days)</th>';
@@ -2009,39 +2009,39 @@ function buildTable(arr){
     h+='<th class="num" style="'+thStyle+'" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
   });
   if(hasPgi){
-    h+='<th class="num" style="'+thStyle+'color:#7c3aed;" onclick="sortTable(\'pgi\')">Current'+arrow('pgi')+'</th>';
-    if(hasPgiPrev) h+='<th class="num" style="'+thStyle+'color:#7c3aed;" onclick="sortTable(\'pgi_d\')">\u0394'+arrow('pgi_d')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#a78bfa;" onclick="sortTable(\'pgi\')">Current'+arrow('pgi')+'</th>';
+    if(hasPgiPrev) h+='<th class="num" style="'+thStyle+'color:#a78bfa;" onclick="sortTable(\'pgi_d\')">\u0394'+arrow('pgi_d')+'</th>';
   }
   if(hasRemain){
-    h+='<th class="num" style="'+thStyle+'color:#b45309;" onclick="sortTable(\'rem\')">Current'+arrow('rem')+'</th>';
-    if(hasRemPrev) h+='<th class="num" style="'+thStyle+'color:#b45309;" onclick="sortTable(\'rem_d\')">\u0394'+arrow('rem_d')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#fbbf24;" onclick="sortTable(\'rem\')">Current'+arrow('rem')+'</th>';
+    if(hasRemPrev) h+='<th class="num" style="'+thStyle+'color:#fbbf24;" onclick="sortTable(\'rem_d\')">\u0394'+arrow('rem_d')+'</th>';
   }
   if(hasOpen){
-    h+='<th class="num" style="'+thStyle+'color:#0284c7;" onclick="sortTable(\'opn\')">Current'+arrow('opn')+'</th>';
-    if(hasOpnPrev) h+='<th class="num" style="'+thStyle+'color:#0284c7;" onclick="sortTable(\'opn_d\')">\u0394'+arrow('opn_d')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#38bdf8;" onclick="sortTable(\'opn\')">Current'+arrow('opn')+'</th>';
+    if(hasOpnPrev) h+='<th class="num" style="'+thStyle+'color:#38bdf8;" onclick="sortTable(\'opn_d\')">\u0394'+arrow('opn_d')+'</th>';
   }
   if(hasOud){
-    h+='<th class="num" style="'+thStyle+'color:#b45309;" onclick="sortTable(\'oud\')">Current'+arrow('oud')+'</th>';
-    h+='<th class="num" style="'+thStyle+'color:#b45309;" onclick="sortTable(\'oud_d\')">\u0394'+arrow('oud_d')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#fbbf24;" onclick="sortTable(\'oud\')">Current'+arrow('oud')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#fbbf24;" onclick="sortTable(\'oud_d\')">\u0394'+arrow('oud_d')+'</th>';
   }
   if(hasAr){
     var crCol=cols.find(function(cc){return cc.key==='cr_lim';});
-    h+='<th class="num" style="'+thStyle+'color:#4f46e5;" onclick="sortTable(\'cr_lim\')">'+crCol.label+arrow('cr_lim')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#818cf8;" onclick="sortTable(\'cr_lim\')">'+crCol.label+arrow('cr_lim')+'</th>';
     ['ar_bal','ar_ovd','ar_o1','ar_o2','ar_o3'].forEach(function(k){
       var c=cols.find(function(cc){return cc.key===k;});
-      var sColor=k==='ar_bal'?'color:#2563eb;':'color:#dc2626;';
+      var sColor=k==='ar_bal'?'color:#60a5fa;':'color:#f87171;';
       h+='<th class="num" style="'+thStyle+sColor+'" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
     });
   }
   if(hasCol){
     ['col_mtd','col_ytd'].forEach(function(k){
       var c=cols.find(function(cc){return cc.key===k;});
-      h+='<th class="num" style="'+thStyle+'color:#059669;" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
+      h+='<th class="num" style="'+thStyle+'color:#34d399;" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
     });
   }
   if(hasAr){
-    h+='<th class="num" style="'+thStyle+'color:#0d9488;" onclick="sortTable(\'dso_simple\')">Simple'+arrow('dso_simple')+'</th>';
-    h+='<th class="num" style="'+thStyle+'color:#0d9488;" onclick="sortTable(\'dso_aged\')">Aged'+arrow('dso_aged')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#2dd4bf;" onclick="sortTable(\'dso_simple\')">Simple'+arrow('dso_simple')+'</th>';
+    h+='<th class="num" style="'+thStyle+'color:#2dd4bf;" onclick="sortTable(\'dso_aged\')">Aged'+arrow('dso_aged')+'</th>';
   }
   h+='</tr></thead><tbody>';
   arr.forEach(function(a,i){
@@ -2049,23 +2049,23 @@ function buildTable(arr){
     var ov=isVal?a.oud_v:a.oud_q, odv=isVal?a.oud_dv:a.oud_dq;
     var _rf=_rsmGet(a.id);
     h+='<tr><td class="fz fz0">'+(i+1)+'</td><td class="fz fz1">'+(a.id||'')+'</td><td class="fz fz2">'+(a.nm||'')+'</td><td class="fz fz3">'+(a.tm?teamLabel(a.tm):'')+'</td><td class="fz fz4">'+(a.st||'')+'</td>';
-    h+='<td class="num rsm-fcst-cell" data-id="'+a.id+'" data-col="rsm" data-val="'+(_rf||0)+'" style="cursor:pointer;color:#2563eb;border-left:1px solid #93c5fd;">'+(_rf?fmtF(_rf):'<span style="color:#e2e8f0;font-size:10px">+</span>')+'</td>';
+    h+='<td class="num rsm-fcst-cell" data-id="'+a.id+'" data-col="rsm" data-val="'+(_rf||0)+'" style="cursor:pointer;color:#60a5fa;border-left:1px solid #1e3a5f;">'+(_rf?fmtF(_rf):'<span style="color:#334155;font-size:10px">+</span>')+'</td>';
     h+='<td class="num" data-col="v24" data-val="'+(v24||0)+'">'+fmtF(v24)+'</td><td class="num" data-col="v25" data-val="'+(v25||0)+'">'+fmtF(v25)+'</td><td class="num" data-col="v26" data-val="'+(v26||0)+'">'+fmtF(v26)+'</td>';
     // PGI / Remain / Open (with WoW delta)
     function _proDelta(val,dv){ var c=dv<0?'#10b981':dv>0?'#ef4444':'#64748b'; return '<td class="num" style="color:'+c+'">'+(dv?(dv>0?'+':'')+fmtF(dv):'-')+'</td>'; }
-    if(hasPgi){ var pv=isVal?a.pgi_v:a.pgi_q; h+='<td class="num" data-col="pgi" data-val="'+(pv||0)+'" style="color:#7c3aed">'+(pv?fmtF(pv):'-')+'</td>'; if(hasPgiPrev) h+=_proDelta(pv,isVal?a.pgi_dv:a.pgi_dq); }
+    if(hasPgi){ var pv=isVal?a.pgi_v:a.pgi_q; h+='<td class="num" data-col="pgi" data-val="'+(pv||0)+'" style="color:#a78bfa">'+(pv?fmtF(pv):'-')+'</td>'; if(hasPgiPrev) h+=_proDelta(pv,isVal?a.pgi_dv:a.pgi_dq); }
     if(hasRemain){ var rv=isVal?a.rem_v:a.rem_q; h+='<td class="num" data-col="rem" data-val="'+(rv||0)+'" style="color:#f59e0b">'+(rv?fmtF(rv):'-')+'</td>'; if(hasRemPrev) h+=_proDelta(rv,isVal?a.rem_dv:a.rem_dq); }
     if(hasOpen){ var opv=isVal?a.opn_v:a.opn_q; h+='<td class="num" data-col="opn" data-val="'+(opv||0)+'" style="color:#0ea5e9">'+(opv?fmtF(opv):'-')+'</td>'; if(hasOpnPrev) h+=_proDelta(opv,isVal?a.opn_dv:a.opn_dq); }
     if(hasOud){
-      h+='<td class="num" data-col="oud" data-val="'+(ov||0)+'" style="color:#b45309">'+(ov?fmtF(ov):'-')+'</td>';
+      h+='<td class="num" data-col="oud" data-val="'+(ov||0)+'" style="color:#fbbf24">'+(ov?fmtF(ov):'-')+'</td>';
       var dColor=odv<0?'#10b981':odv>0?'#ef4444':'#64748b';
       h+='<td class="num" style="color:'+dColor+'">'+(odv?(odv>0?'+':'')+fmtF(odv):'-')+'</td>';
     }
     if(hasAr){
-      h+='<td class="num" data-col="cr_lim" data-val="'+(a.ar_cl||0)+'" style="color:#4f46e5">'+(a.ar_cl?fmtF(a.ar_cl):'-')+'</td>';
-      h+='<td class="num" data-col="ar_bal" data-val="'+(a.ar_bal||0)+'" style="color:#2563eb">'+(a.ar_bal?fmtF(a.ar_bal):'-')+'</td>';
+      h+='<td class="num" data-col="cr_lim" data-val="'+(a.ar_cl||0)+'" style="color:#818cf8">'+(a.ar_cl?fmtF(a.ar_cl):'-')+'</td>';
+      h+='<td class="num" data-col="ar_bal" data-val="'+(a.ar_bal||0)+'" style="color:#60a5fa">'+(a.ar_bal?fmtF(a.ar_bal):'-')+'</td>';
       h+='<td class="num" data-col="ar_ovd" data-val="'+(a.ar_ovd||0)+'" style="color:#ef4444">'+(a.ar_ovd?fmtF(a.ar_ovd):'-')+'</td>';
-      h+='<td class="num" data-col="ar_o1" data-val="'+(a.ar_o1||0)+'" style="color:#b45309">'+(a.ar_o1?fmtF(a.ar_o1):'-')+'</td>';
+      h+='<td class="num" data-col="ar_o1" data-val="'+(a.ar_o1||0)+'" style="color:#fbbf24">'+(a.ar_o1?fmtF(a.ar_o1):'-')+'</td>';
       h+='<td class="num" data-col="ar_o2" data-val="'+(a.ar_o2||0)+'" style="color:#f97316">'+(a.ar_o2?fmtF(a.ar_o2):'-')+'</td>';
       h+='<td class="num" data-col="ar_o3" data-val="'+(a.ar_o3||0)+'" style="color:#ef4444">'+(a.ar_o3?fmtF(a.ar_o3):'-')+'</td>';
     }
@@ -2075,7 +2075,7 @@ function buildTable(arr){
     }
     if(hasAr){
       h+='<td class="num" style="color:#14b8a6">'+(a.dso_simple!=null?a.dso_simple.toFixed(1):'-')+'</td>';
-      h+='<td class="num" style="color:#0d9488">'+(a.dso_aged!=null?a.dso_aged.toFixed(1):'-')+'</td>';
+      h+='<td class="num" style="color:#2dd4bf">'+(a.dso_aged!=null?a.dso_aged.toFixed(1):'-')+'</td>';
     }
     h+='</tr>';
   });
@@ -2097,23 +2097,23 @@ function buildTable(arr){
   });
   _tblRsmTotal=tot.rsm;
   _tblRsmByTeam=rsmByTm;
-  var tfS='font-weight:700;background:#f1f5f9;border-top:2px solid #e2e8f0;padding:4px 6px;';
+  var tfS='font-weight:700;background:#0f172a;border-top:2px solid #334155;padding:4px 6px;';
   var tfN='class="num" style="'+tfS;
   h+='<tfoot><tr>';
-  h+='<td class="fz fz0" style="'+tfS+'"></td><td class="fz fz1" style="'+tfS+'"></td><td class="fz fz2" style="'+tfS+'color:#64748b;text-align:right;">TOTAL ('+arr.length+')</td><td class="fz fz3" style="'+tfS+'"></td><td class="fz fz4" style="'+tfS+'box-shadow:2px 0 6px rgba(0,0,0,.08);"></td>';
-  h+='<td '+tfN+'color:#2563eb;" data-col="rsm">'+fmtF(tot.rsm)+'</td>';
+  h+='<td class="fz fz0" style="'+tfS+'"></td><td class="fz fz1" style="'+tfS+'"></td><td class="fz fz2" style="'+tfS+'color:#94a3b8;text-align:right;">TOTAL ('+arr.length+')</td><td class="fz fz3" style="'+tfS+'"></td><td class="fz fz4" style="'+tfS+'box-shadow:2px 0 6px rgba(0,0,0,.4);"></td>';
+  h+='<td '+tfN+'color:#60a5fa;" data-col="rsm">'+fmtF(tot.rsm)+'</td>';
   h+='<td '+tfN+'" data-col="v24">'+fmtF(tot.v24)+'</td>';
   h+='<td '+tfN+'" data-col="v25">'+fmtF(tot.v25)+'</td>';
   h+='<td '+tfN+'" data-col="v26">'+fmtF(tot.v26)+'</td>';
-  if(hasPgi){ h+='<td '+tfN+'color:#7c3aed;" data-col="pgi">'+fmtF(tot.pgi)+'</td>'; if(hasPgiPrev) h+='<td '+tfN+'color:#64748b;">-</td>'; }
+  if(hasPgi){ h+='<td '+tfN+'color:#a78bfa;" data-col="pgi">'+fmtF(tot.pgi)+'</td>'; if(hasPgiPrev) h+='<td '+tfN+'color:#64748b;">-</td>'; }
   if(hasRemain){ h+='<td '+tfN+'color:#f59e0b;" data-col="rem">'+fmtF(tot.rem)+'</td>'; if(hasRemPrev) h+='<td '+tfN+'color:#64748b;">-</td>'; }
   if(hasOpen){ h+='<td '+tfN+'color:#0ea5e9;" data-col="opn">'+fmtF(tot.opn)+'</td>'; if(hasOpnPrev) h+='<td '+tfN+'color:#64748b;">-</td>'; }
-  if(hasOud){ h+='<td '+tfN+'color:#b45309;" data-col="oud">'+fmtF(tot.oud)+'</td><td '+tfN+'color:#64748b;">-</td>'; }
+  if(hasOud){ h+='<td '+tfN+'color:#fbbf24;" data-col="oud">'+fmtF(tot.oud)+'</td><td '+tfN+'color:#64748b;">-</td>'; }
   if(hasAr){
-    h+='<td '+tfN+'color:#4f46e5;" data-col="cr_lim">'+fmtF(tot.ar_cl)+'</td>';
-    h+='<td '+tfN+'color:#2563eb;" data-col="ar_bal">'+fmtF(tot.ar_bal)+'</td>';
+    h+='<td '+tfN+'color:#818cf8;" data-col="cr_lim">'+fmtF(tot.ar_cl)+'</td>';
+    h+='<td '+tfN+'color:#60a5fa;" data-col="ar_bal">'+fmtF(tot.ar_bal)+'</td>';
     h+='<td '+tfN+'color:#ef4444;" data-col="ar_ovd">'+fmtF(tot.ar_ovd)+'</td>';
-    h+='<td '+tfN+'color:#b45309;" data-col="ar_o1">'+fmtF(tot.ar_o1)+'</td>';
+    h+='<td '+tfN+'color:#fbbf24;" data-col="ar_o1">'+fmtF(tot.ar_o1)+'</td>';
     h+='<td '+tfN+'color:#f97316;" data-col="ar_o2">'+fmtF(tot.ar_o2)+'</td>';
     h+='<td '+tfN+'color:#ef4444;" data-col="ar_o3">'+fmtF(tot.ar_o3)+'</td>';
   }
@@ -2125,7 +2125,7 @@ function buildTable(arr){
     var _ftSD=(tot.ar_bal>0&&tot.v26_ytd>0)?(tot.ar_bal/(tot.v26_ytd*VAT)*calcDaysYtd()):null;
     var _ftAD=calcAgedDso(tot.ar_bal,tot.ar_ovd,tot.ar_o1,tot.ar_o2,tot.ar_o3);
     h+='<td class="num" style="'+tfS+'color:#14b8a6;">'+(_ftSD!=null?_ftSD.toFixed(1):'-')+'</td>';
-    h+='<td class="num" style="'+tfS+'color:#0d9488;">'+(_ftAD!=null?_ftAD.toFixed(1):'-')+'</td>';
+    h+='<td class="num" style="'+tfS+'color:#2dd4bf;">'+(_ftAD!=null?_ftAD.toFixed(1):'-')+'</td>';
   }
   h+='</tr></tfoot>';
   document.getElementById('topTable').innerHTML=h;
@@ -2219,22 +2219,22 @@ function exportExcel(){
     var cur=_rsmGet(id);
     var inp=document.createElement('input');
     inp.type='number'; inp.value=cur||'';
-    inp.style.cssText='width:90px;background:#fff;color:#2563eb;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;';
+    inp.style.cssText='width:90px;background:#1e293b;color:#60a5fa;border:1px solid #3b82f6;border-radius:4px;padding:2px 4px;font-size:12px;';
     td.innerHTML=''; td.appendChild(inp); inp.focus(); inp.select();
     function save(){
       var v=parseFloat(inp.value)||0;
       _rsmSet(id,v);
-      td.innerHTML=v?fmtF(v):'<span style="color:#e2e8f0;font-size:10px">+</span>';
+      td.innerHTML=v?fmtF(v):'<span style="color:#334155;font-size:10px">+</span>';
     }
     inp.addEventListener('blur',save);
-    inp.addEventListener('keydown',function(ev){ if(ev.key==='Enter') inp.blur(); if(ev.key==='Escape'){inp.removeEventListener('blur',save);td.innerHTML=cur?fmtF(cur):'<span style="color:#e2e8f0;font-size:10px">+</span>';} });
+    inp.addEventListener('keydown',function(ev){ if(ev.key==='Enter') inp.blur(); if(ev.key==='Escape'){inp.removeEventListener('blur',save);td.innerHTML=cur?fmtF(cur):'<span style="color:#334155;font-size:10px">+</span>';} });
   });
   var arBtns=document.querySelectorAll('.ar-mode-btn');
   arBtns.forEach(function(b){
     b.addEventListener('click',function(){
       _arMode=b.getAttribute('data-mode');
-      arBtns.forEach(function(bb){ bb.style.background='#fff'; bb.style.color='#64748b'; bb.classList.remove('active'); });
-      b.style.background='#e2e8f0'; b.style.color='#1e293b'; b.classList.add('active');
+      arBtns.forEach(function(bb){ bb.style.background='#1e293b'; bb.style.color='#64748b'; bb.classList.remove('active'); });
+      b.style.background='#334155'; b.style.color='#e2e8f0'; b.classList.add('active');
       renderTopTable();
     });
   });
@@ -2410,9 +2410,9 @@ function switchMainTab(tab){
   _mainTab=tab;
   document.getElementById('stTab').style.display=tab==='st'?'':'none';
   document.getElementById('fhTab').style.display=tab==='fh'?'':'none';
-  document.getElementById('mainTabST').style.background=tab==='st'?'#3b82f6':'#fff';
+  document.getElementById('mainTabST').style.background=tab==='st'?'#3b82f6':'#1e293b';
   document.getElementById('mainTabST').style.color=tab==='st'?'#fff':'#64748b';
-  document.getElementById('mainTabFH').style.background=tab==='fh'?'#3b82f6':'#fff';
+  document.getElementById('mainTabFH').style.background=tab==='fh'?'#3b82f6':'#1e293b';
   document.getElementById('mainTabFH').style.color=tab==='fh'?'#fff':'#64748b';
   if(tab==='fh') setTimeout(renderFH, 50);
 }
@@ -2454,23 +2454,23 @@ function fhGetArData(){
 
 function fhSetDsoMode(mode){
   _fhDsoMode=mode;
-  document.getElementById('fhDsoSimpleBtn').style.background=mode==='simple'?'#3b82f6':'#fff';
+  document.getElementById('fhDsoSimpleBtn').style.background=mode==='simple'?'#3b82f6':'#1e293b';
   document.getElementById('fhDsoSimpleBtn').style.color=mode==='simple'?'#fff':'#64748b';
-  document.getElementById('fhDsoSimpleBtn').style.border=mode==='simple'?'none':'1px solid #e2e8f0';
-  document.getElementById('fhDsoAgedBtn').style.background=mode==='aged'?'#3b82f6':'#fff';
+  document.getElementById('fhDsoSimpleBtn').style.border=mode==='simple'?'none':'1px solid #334155';
+  document.getElementById('fhDsoAgedBtn').style.background=mode==='aged'?'#3b82f6':'#1e293b';
   document.getElementById('fhDsoAgedBtn').style.color=mode==='aged'?'#fff':'#64748b';
-  document.getElementById('fhDsoAgedBtn').style.border=mode==='aged'?'none':'1px solid #e2e8f0';
+  document.getElementById('fhDsoAgedBtn').style.border=mode==='aged'?'none':'1px solid #334155';
   renderFH();
 }
 
 function fhSetRevMode(mode){
   _fhRevMode=mode;
-  document.getElementById('fhRevYtdBtn').style.background=mode==='ytd'?'#3b82f6':'#fff';
+  document.getElementById('fhRevYtdBtn').style.background=mode==='ytd'?'#3b82f6':'#1e293b';
   document.getElementById('fhRevYtdBtn').style.color=mode==='ytd'?'#fff':'#64748b';
-  document.getElementById('fhRevYtdBtn').style.border=mode==='ytd'?'none':'1px solid #e2e8f0';
-  document.getElementById('fhRevT12mBtn').style.background=mode==='t12m'?'#3b82f6':'#fff';
+  document.getElementById('fhRevYtdBtn').style.border=mode==='ytd'?'none':'1px solid #334155';
+  document.getElementById('fhRevT12mBtn').style.background=mode==='t12m'?'#3b82f6':'#1e293b';
   document.getElementById('fhRevT12mBtn').style.color=mode==='t12m'?'#fff':'#64748b';
-  document.getElementById('fhRevT12mBtn').style.border=mode==='t12m'?'none':'1px solid #e2e8f0';
+  document.getElementById('fhRevT12mBtn').style.border=mode==='t12m'?'none':'1px solid #334155';
   _buildFhAmCache();
   renderFH();
 }
@@ -2498,7 +2498,7 @@ function fhBuildGradeFilter(){
   var allSel=_fhSelGrades.size===FH_ALL_GRADES.length;
   var allBtn=document.createElement('button');
   allBtn.textContent='All';
-  allBtn.style.cssText='padding:3px 12px;border-radius:4px;border:1px solid '+(allSel?'#64748b':'#e2e8f0')+';background:'+(allSel?'#64748b22':'transparent')+';color:'+(allSel?'#1e293b':'#64748b')+';cursor:pointer;font-size:11px;font-weight:700;margin-right:4px;';
+  allBtn.style.cssText='padding:3px 12px;border-radius:4px;border:1px solid '+(allSel?'#94a3b8':'#334155')+';background:'+(allSel?'#94a3b822':'transparent')+';color:'+(allSel?'#e2e8f0':'#94a3b8')+';cursor:pointer;font-size:11px;font-weight:700;margin-right:4px;';
   allBtn.onclick=function(){
     _fhSelGrades=new Set(FH_ALL_GRADES);
     _fhSelAccount=null;
@@ -2513,7 +2513,7 @@ function fhBuildGradeFilter(){
     var sel=_fhSelGrades.has(g);
     var cnt=gradeCnt[g]||0;
     btn.innerHTML=g+'<span style="font-size:9px;font-weight:400;opacity:0.8;margin-left:3px;">('+cnt+')</span>';
-    btn.style.cssText='padding:3px 10px;border-radius:4px;border:1px solid '+(sel?FH_GRADE_COLORS[g]:'#e2e8f0')+';background:'+(sel?FH_GRADE_COLORS[g]+'22':'transparent')+';color:'+(sel?FH_GRADE_COLORS[g]:'#64748b')+';cursor:pointer;font-size:11px;font-weight:600;';
+    btn.style.cssText='padding:3px 10px;border-radius:4px;border:1px solid '+(sel?FH_GRADE_COLORS[g]:'#334155')+';background:'+(sel?FH_GRADE_COLORS[g]+'22':'transparent')+';color:'+(sel?FH_GRADE_COLORS[g]:'#94a3b8')+';cursor:pointer;font-size:11px;font-weight:600;';
     btn.onclick=function(){
       if(_fhSelGrades.has(g)){
         if(_fhSelGrades.size>1) _fhSelGrades.delete(g);
@@ -2601,8 +2601,8 @@ function fhAdvSwitchTab(idx){
     var btn=document.getElementById('fhAdvTab'+i);
     var cont=document.getElementById('fhAdvContent'+i);
     var active=i===idx;
-    btn.style.background=active?'#ede9fe':'transparent';
-    btn.style.color=active?'#7c3aed':'#64748b';
+    btn.style.background=active?'#1e1b4b':'transparent';
+    btn.style.color=active?'#a78bfa':'#64748b';
     btn.style.borderBottom=active?'2px solid #7c3aed':'2px solid transparent';
     cont.style.display=active?'':'none';
   });
@@ -2613,9 +2613,9 @@ function fhAdvSetLang(lang){
   var enBtn=document.getElementById('fhAdvLangEn');
   var koBtn=document.getElementById('fhAdvLangKo');
   if(enBtn&&koBtn){
-    enBtn.style.background=lang==='en'?'#3b82f6':'#fff';
+    enBtn.style.background=lang==='en'?'#3b82f6':'#1e293b';
     enBtn.style.color=lang==='en'?'#fff':'#64748b';
-    koBtn.style.background=lang==='ko'?'#3b82f6':'#fff';
+    koBtn.style.background=lang==='ko'?'#3b82f6':'#1e293b';
     koBtn.style.color=lang==='ko'?'#fff':'#64748b';
   }
   if(_fhAdvCurrent) fhRenderAdvisoryContent(_fhAdvCurrent);
@@ -2663,7 +2663,7 @@ function fhRenderAdvisoryContent(adv){
   var sal=adv.sales||{};
   var c1=document.getElementById('fhAdvContent1');
   var salesNote=sal.has_sellout_data===false?
-    '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#64748b;">⚠ No weekly sell-out data for this account — analysis based on Sell-In patterns only</div>':'';
+    '<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:8px 12px;margin-bottom:12px;font-size:10px;color:#64748b;">⚠ No weekly sell-out data for this account — analysis based on Sell-In patterns only</div>':'';
   c1.innerHTML=salesNote+_renderAdvSection(sal, sal.signal||'yellow', adv.metrics||{}, ko);
 
   // 탭 2 — Synthesis
@@ -2682,23 +2682,23 @@ function _renderAdvSection(data, signal, metrics, ko){
   var analysis=(ko&&data.analysis_ko)||data.analysis||'';
   var actions=(ko&&data.action_ko&&data.action_ko.length)?data.action_ko:data.action||[];
   if(ko&&!data.headline_ko){
-    html+='<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
+    html+='<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
   }
   if(headline){
     html+='<div style="background:'+sc+'22;border-left:3px solid '+sc+';padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:14px;">'
          +'<span style="color:'+sc+';font-weight:700;font-size:12px;">'+headline+'</span></div>';
   }
   if(analysis){
-    html+='<div style="color:#334155;font-size:11px;line-height:1.7;margin-bottom:14px;">'+
+    html+='<div style="color:#cbd5e1;font-size:11px;line-height:1.7;margin-bottom:14px;">'+
       analysis.replace(/\n/g,'<br>')+'</div>';
   }
   if(actions.length){
-    html+='<div style="background:#fff;border-radius:8px;padding:12px 14px;">'
+    html+='<div style="background:#1e293b;border-radius:8px;padding:12px 14px;">'
          +'<div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:1px;margin-bottom:8px;">ACTION</div>';
     actions.forEach(function(a){
       html+='<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;">'
            +'<span style="color:#7c3aed;font-weight:700;margin-top:1px;">▶</span>'
-           +'<span style="color:#1e293b;font-size:11px;line-height:1.5;">'+a+'</span></div>';
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+a+'</span></div>';
     });
     html+='</div>';
   }
@@ -2715,7 +2715,7 @@ function _renderSynthSection(data, signal, adv, ko){
   var timeline=(ko&&data.timeline_ko&&data.timeline_ko.length)?data.timeline_ko:data.timeline||[];
 
   if(ko&&!data.summary_3lines_ko){
-    html+='<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
+    html+='<div style="background:#1e293b;border:1px solid #334155;border-radius:6px;padding:6px 12px;margin-bottom:10px;font-size:10px;color:#64748b;">한국어 번역 준비 중입니다. 잠시 후 다시 확인해주세요.</div>';
   }
 
   // Verdict 2축 배너
@@ -2725,15 +2725,15 @@ function _renderSynthSection(data, signal, adv, ko){
     var ic=invCfg[verdict.investment_signal]||invCfg.hold;
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">'
          +'<div style="background:'+SIG_COLOR[verdict.risk_level||signal]+'22;border:1px solid '+SIG_COLOR[verdict.risk_level||signal]+';border-radius:8px;padding:12px;text-align:center;">'
-         +'<div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600;">COLLECTION RISK</div>'
+         +'<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;font-weight:600;">COLLECTION RISK</div>'
          +'<div style="font-size:20px;font-weight:700;color:'+SIG_COLOR[verdict.risk_level||signal]+';">'+(SIG_ICON[verdict.risk_level||signal]||'🟡')+' '+(verdict.risk_level||signal).toUpperCase()+'</div></div>'
          +'<div style="background:'+ic.bg+';border:1px solid '+ic.color+';border-radius:8px;padding:12px;text-align:center;">'
-         +'<div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:600;">INVESTMENT</div>'
+         +'<div style="font-size:10px;color:#94a3b8;margin-bottom:4px;font-weight:600;">INVESTMENT</div>'
          +'<div style="font-size:18px;font-weight:700;color:'+ic.color+';">'+ic.label+'</div></div>'
          +'</div>';
     var oneLine=(ko&&verdict.one_line_ko)||verdict.one_line||'';
     if(oneLine){
-      html+='<div style="background:#fff;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#1e293b;font-style:italic;">'+oneLine+'</div>';
+      html+='<div style="background:#1e293b;border-radius:6px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#e2e8f0;font-style:italic;">'+oneLine+'</div>';
     }
   }
 
@@ -2743,7 +2743,7 @@ function _renderSynthSection(data, signal, adv, ko){
     summary.forEach(function(l,i){
       html+='<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:6px;">'
            +'<span style="background:'+sc+';color:#000;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;white-space:nowrap;margin-top:2px;">'+(i+1)+'</span>'
-           +'<span style="color:#1e293b;font-size:11px;line-height:1.5;">'+l+'</span></div>';
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+l+'</span></div>';
     });
     html+='</div>';
   }
@@ -2751,30 +2751,30 @@ function _renderSynthSection(data, signal, adv, ko){
   // 결정 필요사항
   if(decision){
     html+='<div style="background:#7c3aed22;border:1px solid #7c3aed;border-radius:8px;padding:12px 14px;margin-bottom:14px;">'
-         +'<div style="font-size:10px;color:#7c3aed;font-weight:700;letter-spacing:1px;margin-bottom:6px;">DECISION REQUIRED NOW</div>'
-         +'<div style="color:#1e293b;font-size:12px;font-weight:600;">'+decision+'</div></div>';
+         +'<div style="font-size:10px;color:#a78bfa;font-weight:700;letter-spacing:1px;margin-bottom:6px;">DECISION REQUIRED NOW</div>'
+         +'<div style="color:#e2e8f0;font-size:12px;font-weight:600;">'+decision+'</div></div>';
   }
 
   // 옵션
   if(options.length){
     html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">';
     options.forEach(function(opt,i){
-      html+='<div style="background:#fff;border-radius:8px;padding:12px;">'
+      html+='<div style="background:#1e293b;border-radius:8px;padding:12px;">'
            +'<div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:4px;">OPTION '+(i===0?'A':'B')+'</div>'
-           +'<div style="color:#1e293b;font-size:11px;font-weight:600;margin-bottom:4px;">'+(opt.option||'')+'</div>'
-           +'<div style="color:#64748b;font-size:10px;">'+(opt.consequence||'')+'</div></div>';
+           +'<div style="color:#e2e8f0;font-size:11px;font-weight:600;margin-bottom:4px;">'+(opt.option||'')+'</div>'
+           +'<div style="color:#94a3b8;font-size:10px;">'+(opt.consequence||'')+'</div></div>';
     });
     html+='</div>';
   }
 
   // 타임라인
   if(timeline.length){
-    html+='<div style="background:#fff;border-radius:8px;padding:12px 14px;">'
+    html+='<div style="background:#1e293b;border-radius:8px;padding:12px 14px;">'
          +'<div style="font-size:10px;font-weight:700;color:#7c3aed;letter-spacing:1px;margin-bottom:10px;">TIMELINE</div>';
     timeline.forEach(function(t){
       html+='<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:8px;">'
            +'<div style="background:#7c3aed;color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-top:2px;">'+(t.deadline||'TBD')+'</div>'
-           +'<span style="color:#1e293b;font-size:11px;line-height:1.5;">'+(t.step||'')+'</span></div>';
+           +'<span style="color:#e2e8f0;font-size:11px;line-height:1.5;">'+(t.step||'')+'</span></div>';
     });
     html+='</div>';
   }
@@ -2795,7 +2795,7 @@ function fhShowAdvisory(sid, name){
       document.getElementById('fhAdvSignal').textContent='⏳';
       document.getElementById('fhAdvName').textContent=name;
       document.getElementById('fhAdvHeadline').textContent='Advisory not yet generated for this account';
-      document.getElementById('fhAdvContent0').innerHTML='<p style="color:#64748b;font-size:12px;padding:20px 0;">이 계정의 어드바이저리가 아직 생성되지 않았습니다.<br><br>텔레그램에서 <strong style="color:#7c3aed;">FH 어드바이저리 업데이트</strong>를 요청하시거나,<br>서버에서 <code style="color:#7c3aed;">python3 generate_fh_advisory.py</code> 를 실행하세요.</p>';
+      document.getElementById('fhAdvContent0').innerHTML='<p style="color:#64748b;font-size:12px;padding:20px 0;">이 계정의 어드바이저리가 아직 생성되지 않았습니다.<br><br>텔레그램에서 <strong style="color:#a78bfa;">FH 어드바이저리 업데이트</strong>를 요청하시거나,<br>서버에서 <code style="color:#7c3aed;">python3 generate_fh_advisory.py</code> 를 실행하세요.</p>';
       [1,2].forEach(function(i){document.getElementById('fhAdvContent'+i).innerHTML='';});
       fhAdvSwitchTab(0);
       document.getElementById('fhAdvisoryPanel').scrollIntoView({behavior:'smooth',block:'start'});
@@ -2854,7 +2854,7 @@ function _fhDynamicInsight(mv, ytdAvgOvd){
     } else {
       return FH_MOVE_INTERP[key]||'Quadrant shift';
     }
-    return '<span style="color:#1e293b;">'+ph2+'</span><br><span style="color:#0284c7;font-weight:600;">▶ '+act2+'</span>';
+    return '<span style="color:#e2e8f0;">'+ph2+'</span><br><span style="color:#38bdf8;font-weight:600;">▶ '+act2+'</span>';
   }
 
   // buyRatio = dsoT/dsoY : 높을수록 최근 구매 페이스 증가
@@ -2908,7 +2908,7 @@ function _fhDynamicInsight(mv, ytdAvgOvd){
   } else {
     return FH_MOVE_INTERP[key]||'Quadrant shift';
   }
-  return '<span style="color:#1e293b;">'+ph+'</span><br><span style="color:#0284c7;font-weight:600;">▶ '+act+'</span>';
+  return '<span style="color:#e2e8f0;">'+ph+'</span><br><span style="color:#38bdf8;font-weight:600;">▶ '+act+'</span>';
 }
 
 function _fhQuadrant(dso, ovd_rate, ovdThresh){
@@ -2922,9 +2922,9 @@ function _fhQuadrant(dso, ovd_rate, ovdThresh){
 function fhToggleCompare(){
   _fhCompareMode=!_fhCompareMode;
   var btn=document.getElementById('fhCompareBtn');
-  btn.style.background=_fhCompareMode?'#7c3aed':'#fff';
+  btn.style.background=_fhCompareMode?'#7c3aed':'#0f172a';
   btn.style.color=_fhCompareMode?'#fff':'#64748b';
-  btn.style.border=_fhCompareMode?'none':'1px solid #e2e8f0';
+  btn.style.border=_fhCompareMode?'none':'1px solid #334155';
   renderFH();
 }
 
@@ -2942,7 +2942,7 @@ function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleCo
   pts.forEach(function(a){ if(!gradeGroups[a.cls]) gradeGroups[a.cls]=[]; gradeGroups[a.cls].push(a); });
   var datasets=[];
   Object.keys(gradeGroups).forEach(function(cls){
-    var color=FH_GRADE_COLORS[cls]||'#64748b';
+    var color=FH_GRADE_COLORS[cls]||'#94a3b8';
     datasets.push({
       label:cls,
       data:gradeGroups[cls].map(function(a){
@@ -2969,7 +2969,7 @@ function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleCo
     c2.beginPath(); c2.moveTo(x0,t); c2.lineTo(x0,b); c2.stroke();
     c2.beginPath(); c2.moveTo(l,y0); c2.lineTo(r2,y0); c2.stroke();
     c2.setLineDash([]);
-    c2.font='bold 9px sans-serif'; c2.globalAlpha=0.75; c2.fillStyle='#64748b';
+    c2.font='bold 9px sans-serif'; c2.globalAlpha=0.75; c2.fillStyle='#94a3b8';
     c2.fillText('DPO 180d',x0+3,t+10);
     c2.fillText('Avg '+avgOvd.toFixed(0)+'%',l+3,y0-3);
     c2.globalAlpha=0.7; c2.font='bold 10px sans-serif';
@@ -2984,7 +2984,7 @@ function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleCo
     options:{
       responsive:true,maintainAspectRatio:false,
       plugins:{
-        legend:{labels:{color:'#1e293b',font:{size:10}}},
+        legend:{labels:{color:'#e2e8f0',font:{size:10}}},
         datalabels:{display:false},
         tooltip:{callbacks:{label:function(ctx){
           var a=ctx.raw._a;
@@ -2998,10 +2998,10 @@ function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleCo
       scales:{
         x:{reverse:true,
           title:{display:true,text:'DSO Simple '+modeLabel+' (days)  |  ←Higher  Lower→',color:titleColor,font:{size:10}},
-          ticks:{color:'#64748b'},grid:{color:'#e2e8f0'},border:{color:'#cbd5e1'}},
-        y:{title:{display:true,text:'Overdue Rate (%)',color:'#64748b',font:{size:10}},
-          ticks:{color:'#64748b',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
-          grid:{color:'#e2e8f0'},border:{color:'#cbd5e1'}}
+          ticks:{color:'#94a3b8'},grid:{color:'#1e293b'},border:{color:'#475569'}},
+        y:{title:{display:true,text:'Overdue Rate (%)',color:'#94a3b8',font:{size:10}},
+          ticks:{color:'#94a3b8',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
+          grid:{color:'#1e293b'},border:{color:'#475569'}}
       }
     },
     plugins:[qp]
@@ -3028,8 +3028,8 @@ function renderFHCompare(){
 
   // 차트
   var cY={ch:_fhCompChartY}, cT={ch:_fhCompChartT};
-  _renderCompareChart('fhCompareYtdWrap',ytdAccts,cY,ytdAvgOvd,'(YTD)','#2563eb');
-  _renderCompareChart('fhCompareT12mWrap',t12mAccts,cT,t12mAvgOvd,'(T12M)','#7c3aed');
+  _renderCompareChart('fhCompareYtdWrap',ytdAccts,cY,ytdAvgOvd,'(YTD)','#60a5fa');
+  _renderCompareChart('fhCompareT12mWrap',t12mAccts,cT,t12mAvgOvd,'(T12M)','#a78bfa');
   _fhCompChartY=cY.ch; _fhCompChartT=cT.ch;
 
   // 이동 계정 맵핑 (YTD/T12M union — 한쪽에만 있는 계정도 포함)
@@ -3062,7 +3062,7 @@ function renderFHCompare(){
 
   var tbl=document.getElementById('fhMoveTable');
   var th='<tr>'+['Account','Grade','YTD DSO','T12M DSO','Shift','Insight'].map(function(h){
-    return '<th style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#64748b;font-weight:600;text-align:left;white-space:nowrap;">'+h+'</th>';
+    return '<th style="padding:6px 8px;border-bottom:1px solid #334155;color:#64748b;font-weight:600;text-align:left;white-space:nowrap;">'+h+'</th>';
   }).join('')+'</tr>';
   var rows=moves.map(function(mv){
     var interp=_fhDynamicInsight(mv, ytdAvgOvd);
@@ -3075,15 +3075,15 @@ function renderFHCompare(){
     var sid=mv.a.id, acctName=mv.a.name;
     var hasAdv=_fhAdvisory&&_fhAdvisory.accounts&&_fhAdvisory.accounts[sid];
     var advBadge=hasAdv
-      ? '<span style="margin-left:6px;padding:1px 6px;background:#ede9fe;color:#7c3aed;font-size:9px;border-radius:3px;font-weight:700;">'+
+      ? '<span style="margin-left:6px;padding:1px 6px;background:#7c3aed22;color:#a78bfa;font-size:9px;border-radius:3px;font-weight:700;">'+
         (SIG_ICON[_fhAdvisory.accounts[sid].signal]||'')+'Advisory</span>'
-      : '<span style="margin-left:6px;padding:1px 6px;background:#e2e8f0;color:#64748b;font-size:9px;border-radius:3px;">Advisory</span>';
+      : '<span style="margin-left:6px;padding:1px 6px;background:#334155;color:#475569;font-size:9px;border-radius:3px;">Advisory</span>';
     var rowClick='onclick="fhShowAdvisory(\''+sid+'\',\''+acctName.replace(/'/g,"\\'")+'\')"';
-    return '<tr '+rowClick+' style="'+rowBg+'border-bottom:1px solid #e2e8f0;cursor:pointer;" onmouseover="this.style.background=\'rgba(124,58,237,0.05)\'" onmouseout="this.style.background=\''+rowBg.replace('background:','').replace(';','').trim()+'\'">'+
-      '<td style="padding:6px 8px;color:#1e293b;">'+mv.a.name+advBadge+'</td>'+
+    return '<tr '+rowClick+' style="'+rowBg+'border-bottom:1px solid #1e293b;cursor:pointer;" onmouseover="this.style.background=\'rgba(124,58,237,0.05)\'" onmouseout="this.style.background=\''+rowBg.replace('background:','').replace(';','').trim()+'\'">'+
+      '<td style="padding:6px 8px;color:#e2e8f0;">'+mv.a.name+advBadge+'</td>'+
       '<td style="padding:6px 8px;"><span style="color:'+FH_GRADE_COLORS[mv.a.cls]+';font-weight:600;">'+mv.a.cls+'</span></td>'+
-      '<td style="padding:6px 8px;color:#64748b;font-family:monospace;">'+(mv.dsoY!=null?mv.dsoY.toFixed(0)+'d':'N/A')+'</td>'+
-      '<td style="padding:6px 8px;color:#64748b;font-family:monospace;">'+(mv.dsoT!=null?mv.dsoT.toFixed(0)+'d':'N/A')+'</td>'+
+      '<td style="padding:6px 8px;color:#94a3b8;font-family:monospace;">'+(mv.dsoY!=null?mv.dsoY.toFixed(0)+'d':'N/A')+'</td>'+
+      '<td style="padding:6px 8px;color:#94a3b8;font-family:monospace;">'+(mv.dsoT!=null?mv.dsoT.toFixed(0)+'d':'N/A')+'</td>'+
       '<td style="padding:6px 8px;">'+bY+' → '+bT+'</td>'+
       '<td style="padding:8px 10px;font-size:10px;line-height:1.6;min-width:320px;max-width:480px;">'+interp+'</td>'+
       '</tr>';
@@ -3170,16 +3170,16 @@ function renderFHKpi(accts){
   var fmt2=function(v){return v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'K':v.toFixed(0);};
   var dateLabel=_fhSelDate==='latest'?((RAW.ar&&RAW.ar.current)?RAW.ar.current.date:'Latest'):_fhSelDate;
   var kpis=[
-    {label:'Total Credit Limit',val:'SAR '+fmt2(totCl),color:'#4f46e5'},
-    {label:'Total AR Balance',val:'SAR '+fmt2(totBal),color:'#2563eb'},
-    {label:'Total Overdue',val:'SAR '+fmt2(totOvd),color:'#dc2626'},
+    {label:'Total Credit Limit',val:'SAR '+fmt2(totCl),color:'#818cf8'},
+    {label:'Total AR Balance',val:'SAR '+fmt2(totBal),color:'#60a5fa'},
+    {label:'Total Overdue',val:'SAR '+fmt2(totOvd),color:'#f87171'},
     {label:'Overdue %',val:ovdPct.toFixed(1)+'%',color:'#fb923c'},
-    {label:'Avg DSO ('+ (_fhDsoMode==='simple'?('Simple '+(_fhRevMode==='t12m'?'T12M':'YTD')):'Aged')+')',val:avgDso.toFixed(1)+' days',color:'#0d9488'},
+    {label:'Avg DSO ('+ (_fhDsoMode==='simple'?('Simple '+(_fhRevMode==='t12m'?'T12M':'YTD')):'Aged')+')',val:avgDso.toFixed(1)+' days',color:'#2dd4bf'},
     {label:'Data Date',val:dateLabel,color:'#64748b'},
   ];
   var g=document.getElementById('fhKpiStrip');
   g.innerHTML=kpis.map(function(k){
-    return '<div style="background:#fff;border-radius:8px;padding:12px 14px;border:1px solid #e2e8f0;box-shadow:0 1px 2px rgba(0,0,0,.04);">'
+    return '<div style="background:#0f172a;border-radius:8px;padding:12px 14px;border:1px solid #1e293b;">'
       +'<div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;">'+k.label+'</div>'
       +'<div style="font-size:18px;font-weight:700;color:'+k.color+';">'+k.val+'</div>'
       +'</div>';
@@ -3214,7 +3214,7 @@ function renderFHChart(accts){
     gradeGroups[a.cls].push(a);
   });
   Object.keys(gradeGroups).forEach(function(cls){
-    var color=FH_GRADE_COLORS[cls]||'#64748b';
+    var color=FH_GRADE_COLORS[cls]||'#94a3b8';
     var data=gradeGroups[cls].map(function(a){
       var r=a.bal>0?Math.max(6,Math.min(32,Math.sqrt(a.bal/maxBal)*42)):6;
       var xv=a.no_rev?a._chartX:a[xKey];
@@ -3252,7 +3252,7 @@ function renderFHChart(accts){
     ctx2.setLineDash([]);
     // 기준선 레이블
     ctx2.font='bold 10px sans-serif'; ctx2.globalAlpha=0.8;
-    ctx2.fillStyle='#64748b';
+    ctx2.fillStyle='#94a3b8';
     ctx2.fillText('DPO 180d',x0+4,t+10);
     ctx2.fillText('Avg '+selAvgOvd.toFixed(0)+'%',l+4,y0-4);
     ctx2.globalAlpha=0.75; ctx2.font='bold 11px sans-serif';
@@ -3278,14 +3278,14 @@ function renderFHChart(accts){
         }
       },
       plugins:{
-        legend:{labels:{color:'#1e293b',font:{size:11}}},
+        legend:{labels:{color:'#e2e8f0',font:{size:11}}},
         datalabels:{
           display:function(ctx){
             var a=ctx.dataset.data[ctx.dataIndex]._a;
             return ['A+','A','B'].includes(a.cls)||ctx.dataset.data[ctx.dataIndex].r>18;
           },
           formatter:function(val){return val._a.name.split(' ').slice(0,2).join(' ');},
-          color:'#1e293b',font:{size:9},align:'top',offset:4,
+          color:'#ffffff',font:{size:9},align:'top',offset:4,
         },
         tooltip:{callbacks:{label:function(ctx){
           var a=ctx.raw._a;
@@ -3300,12 +3300,12 @@ function renderFHChart(accts){
         }}}
       },
       scales:{
-        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  Baseline: DPO 180d  ←Higher  Lower→',color:'#64748b',font:{size:11}},
-          ticks:{color:'#64748b',callback:function(v){return v.toFixed(0)+'d';}},
-          grid:{color:'#e2e8f0'},border:{color:'#cbd5e1'}},
-        y:{title:{display:true,text:'← Higher Overdue Rate  |  Lower → (Baseline: selected acct avg)',color:'#64748b',font:{size:11}},
-          ticks:{color:'#64748b',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
-          grid:{color:'#e2e8f0'},border:{color:'#cbd5e1'}}
+        x:{reverse:true,title:{display:true,text:'DSO '+(_fhDsoMode==='simple'?'Simple ('+(_fhRevMode==='t12m'?'T12M':'YTD')+')':'Aged')+' (days)  |  Baseline: DPO 180d  ←Higher  Lower→',color:'#94a3b8',font:{size:11}},
+          ticks:{color:'#94a3b8',callback:function(v){return v.toFixed(0)+'d';}},
+          grid:{color:'#1e293b'},border:{color:'#475569'}},
+        y:{title:{display:true,text:'← Higher Overdue Rate  |  Lower → (Baseline: selected acct avg)',color:'#94a3b8',font:{size:11}},
+          ticks:{color:'#94a3b8',callback:function(v){return Math.abs(v).toFixed(0)+'%';}},
+          grid:{color:'#1e293b'},border:{color:'#475569'}}
       }
     },
     plugins:[quadrantPlugin]
@@ -3329,8 +3329,8 @@ function renderFHTable(accts){
   function th(col, label, align){
     var isActive=_fhSortCol===col;
     var arrow=isActive?(_fhSortDir==='asc'?' ▲':' ▼'):'';
-    var base='padding:6px 8px;font-size:10px;font-weight:600;border-bottom:1px solid #e2e8f0;white-space:nowrap;cursor:pointer;user-select:none;';
-    var color=isActive?'color:#2563eb;':'color:#64748b;';
+    var base='padding:6px 8px;font-size:10px;font-weight:600;border-bottom:1px solid #334155;white-space:nowrap;cursor:pointer;user-select:none;';
+    var color=isActive?'color:#60a5fa;':'color:#64748b;';
     var align_s='text-align:'+(align||'right')+';';
     return '<th style="'+base+color+align_s+'" onclick="fhTableSort(\''+col+'\')">'+label+arrow+'</th>';
   }
@@ -3349,7 +3349,7 @@ function renderFHTable(accts){
     +th('dso',      dsoLabel)
     +th('vs180',    'vs DPO 180d')
     +th('quad',     'Quadrant')
-    +'<th style="padding:6px 8px;text-align:right;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #e2e8f0;">Advisory</th>'
+    +'<th style="padding:6px 8px;text-align:right;color:#64748b;font-size:10px;font-weight:600;border-bottom:1px solid #334155;">Advisory</th>'
     +'</tr></thead><tbody>';
 
   // Y 기준선: 테이블 계정 평균 OVD Rate
@@ -3384,9 +3384,9 @@ function renderFHTable(accts){
       :isAnom?'<span style="color:#fb923c;font-weight:600;">Anomaly</span>'
       :'<span style="color:#ef4444;font-weight:600;">Critical</span>';
     var rowBg=a.no_rev?'background:rgba(239,68,68,0.07);':'';
-    var tdS='padding:5px 8px;text-align:right;color:#334155;border-bottom:1px solid #e2e8f0;white-space:nowrap;';
-    var tdSL='padding:5px 8px;text-align:left;color:#1e293b;border-bottom:1px solid #e2e8f0;';
-    var clsColor=FH_GRADE_COLORS[a.cls]||'#64748b';
+    var tdS='padding:5px 8px;text-align:right;color:#cbd5e1;border-bottom:1px solid #1e293b;white-space:nowrap;';
+    var tdSL='padding:5px 8px;text-align:left;color:#e2e8f0;border-bottom:1px solid #1e293b;';
+    var clsColor=FH_GRADE_COLORS[a.cls]||'#94a3b8';
     var rateColor=a.ovd_rate>tblAvgOvd?'#ef4444':a.ovd_rate>(tblAvgOvd*0.5)?'#f59e0b':'#10b981';
     var xColor=x!=null&&x>180?'#ef4444':'#10b981';
     var dsoCell=a.no_rev
@@ -3396,19 +3396,19 @@ function renderFHTable(accts){
       ?'<span style="color:#ef4444;font-size:10px;">No Revenue</span>'
       :(x!=null?(x-180>=0?'+':'')+(x-180).toFixed(1)+'d':'-');
     var criticalQuad='<span style="color:#ef4444;font-weight:600;">Critical</span>';
-    var advBtn='<button onclick="event.stopPropagation();fhShowAdvisory(\''+a.id+'\',\''+a.name.replace(/'/g,"\\'")+'\')" style="padding:2px 8px;background:#ede9fe;color:#7c3aed;border:1px solid #ddd6fe;border-radius:4px;cursor:pointer;font-size:9px;white-space:nowrap;">Advisory</button>';
+    var advBtn='<button onclick="event.stopPropagation();fhShowAdvisory(\''+a.id+'\',\''+a.name.replace(/'/g,"\\'")+'\')" style="padding:2px 8px;background:#1e1b4b;color:#a78bfa;border:1px solid #4c1d95;border-radius:4px;cursor:pointer;font-size:9px;white-space:nowrap;">Advisory</button>';
     h+='<tr style="cursor:pointer;'+rowBg+'" onclick="fhRowClick(\''+a.id+'\')">'
       +'<td style="'+tdSL+'">'+(a.no_rev?'<span style="color:#ef4444;font-size:10px;margin-right:3px;">⚠</span>':'')+a.name+'</td>'
       +'<td style="'+tdS+'"><span style="color:'+clsColor+';font-weight:700;">'+a.cls+'</span></td>'
       +'<td style="'+tdS+'">'+a.pt+'d</td>'
-      +'<td style="'+tdS+'color:#4f46e5;">'+fmtN(a.cl)+'</td>'
-      +'<td style="'+tdS+'color:#2563eb;">'+fmtN(a.bal)+'</td>'
-      +'<td style="'+tdS+'color:#dc2626;">'+fmtN(a.ovd)+'</td>'
+      +'<td style="'+tdS+'color:#818cf8;">'+fmtN(a.cl)+'</td>'
+      +'<td style="'+tdS+'color:#60a5fa;">'+fmtN(a.bal)+'</td>'
+      +'<td style="'+tdS+'color:#f87171;">'+fmtN(a.ovd)+'</td>'
       +'<td style="'+tdS+'color:'+rateColor+';">'+a.ovd_rate.toFixed(1)+'%</td>'
       +'<td style="'+tdS+'">'+fmtN(a.o1)+'</td>'
       +'<td style="'+tdS+'">'+fmtN(a.o2)+'</td>'
       +'<td style="'+tdS+'">'+fmtN(a.o3)+'</td>'
-      +'<td style="'+tdS+'color:#0d9488;">'+dsoCell+'</td>'
+      +'<td style="'+tdS+'color:#2dd4bf;">'+dsoCell+'</td>'
       +'<td style="'+tdS+'color:'+xColor+';">'+vsAvgCell+'</td>'
       +'<td style="'+tdS+'">'+(a.no_rev?criticalQuad:quad)+'</td>'
       +'<td style="'+tdS+'">'+advBtn+'</td>'
@@ -3437,7 +3437,7 @@ function fhClearSelection(){
 function fhReset(){
   _fhCompareMode=false;
   var cbtn=document.getElementById('fhCompareBtn');
-  if(cbtn){cbtn.style.background='#fff';cbtn.style.color='#64748b';cbtn.style.border='1px solid #e2e8f0';}
+  if(cbtn){cbtn.style.background='#0f172a';cbtn.style.color='#64748b';cbtn.style.border='1px solid #334155';}
   _fhSelGrades=new Set(['A+']);
   _fhSelAccount=null;
   _fhSelDate='latest';
@@ -3517,8 +3517,8 @@ function fhShowTrend(accountId, accountName){
       type:'line',
       data:{labels:dates,datasets:[{label:'OVD Rate %',data:ovdRates,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},
-        scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#e2e8f0'}},
-          y:{ticks:{color:'#64748b',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'#e2e8f0'}}}}
+        scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},
+          y:{ticks:{color:'#94a3b8',font:{size:9},callback:function(v){return v+'%';}},grid:{color:'#1e293b'}}}}
     }));
 
     // AR Balance vs Overdue chart
@@ -3527,12 +3527,12 @@ function fhShowTrend(accountId, accountName){
     _fhTrendCharts.push(new Chart(document.getElementById('fhTrendBal').getContext('2d'),{
       type:'line',
       data:{labels:dates,datasets:[
-        {label:'AR Bal (K)',data:bals,borderColor:'#2563eb',backgroundColor:'rgba(96,165,250,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
-        {label:'Overdue (K)',data:ovds,borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3}
+        {label:'AR Bal (K)',data:bals,borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
+        {label:'Overdue (K)',data:ovds,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3}
       ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#1e293b',font:{size:10}}},datalabels:{display:false}},
-        scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#e2e8f0'}},
-          y:{ticks:{color:'#64748b',font:{size:9},callback:function(v){return v+'K';}},grid:{color:'#e2e8f0'}}}}
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#e2e8f0',font:{size:10}}},datalabels:{display:false}},
+        scales:{x:{ticks:{color:'#94a3b8',font:{size:9}},grid:{color:'#1e293b'}},
+          y:{ticks:{color:'#94a3b8',font:{size:9},callback:function(v){return v+'K';}},grid:{color:'#1e293b'}}}}
     }));
   });
 }
