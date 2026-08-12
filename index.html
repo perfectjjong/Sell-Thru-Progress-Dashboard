@@ -1581,11 +1581,14 @@ function renderColTrendChart(){
   var pairs=[];
   MO_ORDER.forEach(function(mm){ ['2025','2026'].forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
   var labels=pairs.map(function(p){ return MONTH_LABELS[p.mm]+" '"+p.yr.slice(2); });
-  // 매 x위치마다 그 달 3개 지표를 값 큰순으로 정렬 → [1위(가장큼),2위,3위(가장작음)]
+  // 2026-08-12 형님 지시(Management 가독성 피드백): Collection은 금액이 훨씬 작아서
+  // 같은 축에 두면 안 보임 — 오른쪽 보조축(y1)에 선그래프로 분리. Receivable/Overdue만
+  // 왼쪽 축(y)에 남아서 2개끼리 겹침(큰 값이 뒤, 작은 값이 앞) 랭킹 유지 — 3개였을 때보다
+  // 단순해짐.
   var ranked=pairs.map(function(p){
     var v=byYearMonth[p.mm][p.yr];
-    if(!v) return [null,null,null];
-    var arr=['bal','ovd','col'].map(function(m){ return {metric:m, val:v[m]||0}; });
+    if(!v) return [null,null];
+    var arr=['bal','ovd'].map(function(m){ return {metric:m, val:v[m]||0}; });
     arr.sort(function(a,b){ return b.val-a.val; });
     return arr;
   });
@@ -1599,22 +1602,26 @@ function renderColTrendChart(){
       return pairs[i].yr==='2025' ? meta.faded : meta.vivid;
     });
   }
+  var colData=pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? v.col : null; });
+  var colMeta=COL_TREND_METRIC_META.col;
   charts['colTrend']=new Chart(document.getElementById('colTrendChart'),{type:'bar',data:{labels:labels,datasets:[
-    {label:'_rank1', data:slotData(0), backgroundColor:slotColor(0), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:3},
-    {label:'_rank2', data:slotData(1), backgroundColor:slotColor(1), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:2},
-    {label:'_rank3', data:slotData(2), backgroundColor:slotColor(2), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:1},
+    {type:'bar', label:'_rank1', data:slotData(0), backgroundColor:slotColor(0), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:2, yAxisID:'y'},
+    {type:'bar', label:'_rank2', data:slotData(1), backgroundColor:slotColor(1), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:1, yAxisID:'y'},
+    {type:'line', label:colMeta.name, data:colData, borderColor:colMeta.vivid, backgroundColor:colMeta.vivid+'33', pointBackgroundColor:colMeta.vivid, tension:.3, fill:false, pointRadius:3, borderWidth:2, spanGaps:false, order:0, yAxisID:'y1', datalabels:{display:false}},
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{
     legend:{labels:{color:'#94a3b8',font:{size:10},generateLabels:function(){
       return ['bal','ovd','col'].map(function(m){ var meta=COL_TREND_METRIC_META[m]; return {text:meta.name, fillStyle:meta.vivid, strokeStyle:meta.vivid, fontColor:'#94a3b8'}; });
     }}},
     tooltip:{callbacks:{label:function(ctx){
-      var rankIdx=ctx.dataset.label==='_rank1'?0:ctx.dataset.label==='_rank2'?1:2;
+      if(ctx.dataset.label===colMeta.name) return colMeta.name+': '+fmt(ctx.parsed.y);
+      var rankIdx=ctx.dataset.label==='_rank1'?0:1;
       var r=ranked[ctx.dataIndex][rankIdx];
       return r ? (COL_TREND_METRIC_META[r.metric].name+': '+fmt(r.val)) : '';
     }}},
     datalabels:{
       display:function(ctx){
-        var rankIdx=ctx.dataset.label==='_rank1'?0:ctx.dataset.label==='_rank2'?1:2;
+        if(ctx.dataset.type!=='bar') return false;
+        var rankIdx=ctx.dataset.label==='_rank1'?0:1;
         var r=ranked[ctx.dataIndex][rankIdx];
         return !!(r && r.metric==='ovd');
       },
@@ -1627,7 +1634,11 @@ function renderColTrendChart(){
       }
     },
     annotation:{annotations:monthBoundaryAnnotations()}
-  },scales:{x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},y:{ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}}}}});
+  },scales:{
+    x:{ticks:{color:'#64748b',font:{size:9}},grid:{color:'#1e293b'}},
+    y:{position:'left',ticks:{color:'#64748b',callback:function(v){return fmt(v);}},grid:{color:'#1e293b'}},
+    y1:{position:'right',grace:'15%',ticks:{color:colMeta.vivid,callback:function(v){return fmt(v);}},grid:{display:false}}
+  }}});
 }
 
 // ======== UNIFIED TABLE (Sell-Thru + OUD + AR + Collection) ========
