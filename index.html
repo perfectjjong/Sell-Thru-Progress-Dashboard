@@ -1434,11 +1434,14 @@ function renderOudDeltaChart(){
     if(!v) return null;
     return Object.keys(v).reduce(function(s,t){ return s+(v[t]||0); },0);
   });
+  // 2025=흐리게(연한 투명도), 2026=선명하게 — Collection Monthly Trend와 동일한
+  // 연도 대비 컨벤션 (2026-08-12 형님 지시).
   var ds=teams.map(function(t,i){
+    var base=TEAM_PALETTE[i%TEAM_PALETTE.length];
     return{
       label:teamLabel(t),
       data:pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? (v[t]||0) : null; }),
-      backgroundColor:TEAM_PALETTE[i%TEAM_PALETTE.length]+'cc',
+      backgroundColor:pairs.map(function(p){ return base+(p.yr==='2025'?'55':'cc'); }),
       stack:'oud', borderRadius:2
     };
   });
