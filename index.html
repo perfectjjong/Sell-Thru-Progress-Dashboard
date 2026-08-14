@@ -1628,7 +1628,7 @@ function renderColTrendChart(){
         var r=ranked[ctx.dataIndex][rankIdx];
         return !!(r && r.metric==='ovd');
       },
-      align:'center', anchor:'center', color:'#fff', font:{size:8,weight:'700'},
+      align:'center', anchor:'center', color:function(ctx){ return pairs[ctx.dataIndex].yr==='2025' ? '#6d1522' : '#fff'; }, font:{size:8,weight:'700'},
       formatter:function(v,ctx){
         var p=pairs[ctx.dataIndex];
         var vals=byYearMonth[p.mm][p.yr];
