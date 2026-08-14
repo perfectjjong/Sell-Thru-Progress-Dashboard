@@ -1452,7 +1452,7 @@ function renderOudDeltaChart(){
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b6355',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{font:{size:9},color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#191714' : '#948c7b'; }},grid:{color:'#fffdf8'}},y:{stacked:true,grace:'10%',ticks:{color:'#948c7b',callback:function(v){return fmt(v);}},grid:{color:'#fffdf8'}}}}});
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b6355',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return {size:9, weight: lbl.indexOf("'26")!==-1 ? '700' : '400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#8c1d2f' : '#b3a98f'; }},grid:{color:'#fffdf8'}},y:{stacked:true,grace:'10%',ticks:{color:'#948c7b',callback:function(v){return fmt(v);}},grid:{color:'#fffdf8'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
@@ -1640,7 +1640,7 @@ function renderColTrendChart(){
   },scales:{
     x:{ticks:{font:{size:9},color:function(ctx){
       var lbl=labels[ctx.index]||'';
-      return lbl.indexOf("'26")!==-1 ? '#191714' : '#948c7b';
+      return lbl.indexOf("'26")!==-1 ? '#8c1d2f' : '#b3a98f';
     }},grid:{color:'#fffdf8'}},
     y:{position:'left',ticks:{color:'#948c7b',callback:function(v){return fmt(v);}},grid:{color:'#fffdf8'}},
     y1:{position:'right',grace:'15%',ticks:{color:colMeta.vivid,callback:function(v){return fmt(v);}},grid:{display:false}}
