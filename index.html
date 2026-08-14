@@ -1448,7 +1448,8 @@ function renderOudDeltaChart(){
   if(ds.length){
     ds[ds.length-1].datalabels={
       display:true, anchor:'end', align:'top', offset:2,
-      color:'#26221c', font:{size:9,weight:'700'},
+      color:function(ctx){ return pairs[ctx.dataIndex].yr==='2026' ? '#8c1d2f' : '#a89b82'; },
+      font:function(ctx){ return pairs[ctx.dataIndex].yr==='2026' ? {size:10,weight:'700'} : {size:9,weight:'400'}; },
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
