@@ -1441,7 +1441,7 @@ function renderOudDeltaChart(){
     return{
       label:teamLabel(t),
       data:pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? (v[t]||0) : null; }),
-      backgroundColor:pairs.map(function(p){ return base+(p.yr==='2025'?'55':'cc'); }),
+      backgroundColor:pairs.map(function(p){ return p.yr==='2025' ? base+'66' : base; }),
       stack:'oud', borderRadius:2
     };
   });
