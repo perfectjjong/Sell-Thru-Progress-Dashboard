@@ -1453,7 +1453,7 @@ function renderOudDeltaChart(){
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b6355',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf("'26")!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#8c1d2f' : '#c4bba6'; }},grid:{color:'#fffdf8'}},y:{stacked:true,grace:'10%',ticks:{color:'#948c7b',callback:function(v){return fmt(v);}},grid:{color:'#fffdf8'}}}}});
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#6b6355',font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:90,font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf("'26")!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? '#8c1d2f' : '#c4bba6'; }},grid:{color:'#fffdf8'}},y:{stacked:true,grace:'10%',ticks:{color:'#948c7b',callback:function(v){return fmt(v);}},grid:{color:'#fffdf8'}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
@@ -1639,7 +1639,7 @@ function renderColTrendChart(){
     },
     annotation:{annotations:monthBoundaryAnnotations()}
   },scales:{
-    x:{ticks:{font:{size:9},color:function(ctx){
+    x:{ticks:{autoSkip:false,maxRotation:90,font:{size:9},color:function(ctx){
       var lbl=labels[ctx.index]||'';
       return lbl.indexOf("'26")!==-1 ? '#8c1d2f' : '#c4bba6';
     }},grid:{color:'#fffdf8'}},
