@@ -158,6 +158,7 @@ tfoot .fz{background:#f7f3ea}
 @media(max-width:340px){.oud-grid,.pgi-row,.ar-grid,.status-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:700px){.scroll-table{max-height:none!important;overflow-y:visible!important;overflow-x:auto!important;-webkit-overflow-scrolling:touch}}
 @media(max-width:700px){#topTable .fz{position:static!important;left:auto!important;max-width:none!important;box-shadow:none!important}#topTable th{position:static!important}}
+@media(max-width:700px){#fhKpiStrip{grid-template-columns:repeat(2,minmax(0,1fr))!important}.fh-cmp-grid{grid-template-columns:minmax(0,1fr)!important}}
 </style>
 </head>
 <body>
@@ -275,7 +276,7 @@ tfoot .fz{background:#f7f3ea}
     <span style="font-size:11px;font-weight:600;color:#26221c;margin-right:6px;">Grade</span>
     <div id="fhGradeFilter" style="display:inline-flex;flex-wrap:wrap;gap:4px;"></div>
   </div>
-  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;row-gap:6px;">
     <div style="display:flex;gap:0;">
       <button id="fhRevYtdBtn" onclick="fhSetRevMode('ytd')" style="padding:5px 14px;background:#8c1d2f;color:#fff;border:none;border-radius:6px 0 0 6px;cursor:pointer;font-size:12px;font-weight:600;">YTD</button>
       <button id="fhRevT12mBtn" onclick="fhSetRevMode('t12m')" style="padding:5px 14px;background:#fffdf8;color:#6b6355;border:1px solid #efe9db;border-left:none;border-radius:0 6px 6px 0;cursor:pointer;font-size:12px;font-weight:600;">T12M</button>
@@ -305,7 +306,7 @@ tfoot .fz{background:#f7f3ea}
       <h3 style="margin:0;font-size:13px;color:#26221c;font-weight:500;">YTD vs T12M Comparison <span style="color:#6b6355;font-size:11px;">— Simple DSO basis</span></h3>
       <span style="font-size:10px;color:#6b6355;">X: DSO (days) vs DPO 180d &nbsp;|&nbsp; Y: Overdue Rate (%)</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+    <div class="fh-cmp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div>
         <div style="font-size:11px;color:#a54b5e;font-weight:700;text-align:center;margin-bottom:8px;letter-spacing:0.5px;">◀ YTD (Year-to-Date)</div>
         <div id="fhCompareYtdWrap" style="position:relative;height:380px;"></div>
@@ -380,7 +381,7 @@ tfoot .fz{background:#f7f3ea}
     <h3 id="fhTrendTitle" style="margin:0;font-size:13px;color:#26221c;font-weight:500;">Trend</h3>
     <button onclick="fhCloseTrend()" style="padding:3px 10px;background:#efe9db;color:#26221c;border:none;border-radius:5px;cursor:pointer;font-size:11px;">✕ Close</button>
   </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+  <div class="fh-cmp-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
     <div><div style="font-size:10px;color:#6b6355;margin-bottom:6px;">Overdue Rate (%)</div><div id="fhTrendChartOvdWrap" style="height:180px;"></div></div>
     <div><div style="font-size:10px;color:#6b6355;margin-bottom:6px;">AR Balance vs Overdue (SAR)</div><div id="fhTrendChartBalWrap" style="height:180px;"></div></div>
   </div>
