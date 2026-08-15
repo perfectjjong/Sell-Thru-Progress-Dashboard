@@ -10,9 +10,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:#f7f3ea;color:#26221c;font-size:13px}
-.header{background:linear-gradient(135deg,#fffdf8,#efe9db);padding:18px 28px;border-bottom:2px solid #8c1d2f;display:flex;justify-content:space-between;align-items:center}
+.header{background:linear-gradient(135deg,#fffdf8,#efe9db);padding:18px 28px;border-bottom:2px solid #8c1d2f;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
 .header h1{font-size:19px;font-weight:600;color:#191714}
-.header-right{display:flex;gap:20px;font-size:11px;color:#6b6355}
+.header-right{display:flex;gap:12px 20px;font-size:11px;color:#6b6355;flex-wrap:wrap}
 .header-right span{display:flex;flex-direction:column;gap:2px}
 .header-right .lbl{color:#948c7b;font-size:9px;text-transform:uppercase;letter-spacing:.5px}
 .header-right .val{color:#26221c;font-weight:600}
@@ -150,6 +150,12 @@ tfoot .fz{background:#f7f3ea}
 .col-group.g-oud{background:#f3ead2;color:#8a6d2e}
 .col-group.g-ar{background:#f4e3de;color:#c4574f}
 .col-group.g-col{background:#e8efe4;color:#2a7d54}
+@media(max-width:820px){.chart-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){.kpi-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.oud-grid,.pgi-row{grid-template-columns:repeat(2,minmax(0,1fr))}.ar-grid,.status-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.dso-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:420px){.oud-grid,.pgi-row,.ar-grid,.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:340px){.oud-grid,.pgi-row,.ar-grid,.status-grid{grid-template-columns:minmax(0,1fr)}}
 </style>
 </head>
 <body>
@@ -213,7 +219,7 @@ tfoot .fz{background:#f7f3ea}
 <div class="table-section">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
     <h3 style="margin:0">All Accounts — Sell-Thru · OUD · AR · Collection</h3>
-    <div style="display:flex;gap:8px;align-items:center">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <div id="arModeGroup" style="display:flex;gap:0;font-size:11px">
         <button class="ar-mode-btn active" data-mode="all" style="padding:4px 10px;border:1px solid #efe9db;border-radius:6px 0 0 6px;cursor:pointer;font-weight:600;background:#efe9db;color:#26221c;font-size:11px">All</button>
         <button class="ar-mode-btn" data-mode="sell" style="padding:4px 10px;border:1px solid #efe9db;border-left:none;cursor:pointer;font-weight:600;background:#fffdf8;color:#948c7b;font-size:11px">Sell-Thru Only</button>
