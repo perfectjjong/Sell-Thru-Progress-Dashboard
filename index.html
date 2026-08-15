@@ -2270,7 +2270,7 @@ function renderAll(){
 // ======== ASYNC DATA LOADER ========
 (function(){
   var ldr=document.getElementById('data-loading');
-  fetch('./data.json?_='+Date.now())
+  fetch('./data.json')
     .then(function(r){ return r.json(); })
     .then(function(d){
       RAW=d;
