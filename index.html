@@ -565,6 +565,7 @@ function _initFilters(){
   DIMS.forEach(d=>{ ALL[d.key]=new Set(); });
   RAW.txn.forEach(r=>{ DIMS.forEach(d=>{ ALL[d.key].add(colVal(r,d)); }); });
   DIMS.forEach(d=>{ SEL[d.key]=new Set(ALL[d.key]); });
+  if(ALL.div && ALL.div.has('B2C')) SEL.div=new Set(['B2C']); // 접속 시 기본 필터: Division=B2C만
   SEL._accountAvailKey=[...ALL['account']].sort().join('|');
   SEL._teamAvailKey=[...ALL['team']].sort().join('|');
   SEL._clsAvailKey=[...ALL['cls']].sort().join('|');
