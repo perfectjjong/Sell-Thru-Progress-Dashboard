@@ -533,6 +533,7 @@ let mode='value';
 let _openFilter=null;
 const DIMS=[
   {key:'year',col:C.Y,label:'Year'},
+  {key:'month',col:C.M,label:'Month'},
   {key:'div',col:'_div',label:'Division'},
   {key:'cls',col:'_cls',label:'Class'},
   {key:'team',col:C.TM,label:'Team'},
@@ -805,7 +806,7 @@ function buildFilterBar(){
         renderAll();
       };
       const sp=document.createElement('span');
-      sp.textContent=d.key==='team'?teamLabel(String(val)):String(val);
+      sp.textContent=d.key==='team'?teamLabel(String(val)):d.key==='month'?(MONTH_LABELS[String(val)]||String(val)):String(val);
       lbl.appendChild(cb); lbl.appendChild(sp);
       list.appendChild(lbl);
     });
@@ -816,7 +817,7 @@ function buildFilterBar(){
   // Period picker
   const pdv=document.createElement('div'); pdv.className='filter-divider'; bar.appendChild(pdv);
   const periodWrap=document.createElement('div');
-  periodWrap.style.cssText='display:flex;align-items:center;gap:5px;font-size:11px;color:#453f35';
+  periodWrap.style.cssText='display:flex;align-items:center;gap:5px;font-size:11px;color:#453f35;flex-wrap:wrap;row-gap:6px';
   periodWrap.innerHTML='<span style="font-weight:600;color:#26221c;margin-right:2px">Period</span>';
   const inFrom=document.createElement('input');
   inFrom.type='text'; inFrom.value=dayFrom; inFrom.placeholder='MM-DD';
@@ -852,6 +853,18 @@ function buildFilterBar(){
   fyBtn.onclick=function(){ dayFrom='01-01'; dayTo='12-31'; renderAll(); };
   periodWrap.appendChild(inFrom); periodWrap.appendChild(sep); periodWrap.appendChild(inTo);
   periodWrap.appendChild(ytdBtn); periodWrap.appendChild(fyBtn);
+  var QUARTERS=[
+    {lbl:'Q1',f:'01-01',t:'03-31'},{lbl:'Q2',f:'04-01',t:'06-30'},
+    {lbl:'Q3',f:'07-01',t:'09-30'},{lbl:'Q4',f:'10-01',t:'12-31'},
+    {lbl:'H1',f:'01-01',t:'06-30'},{lbl:'H2',f:'07-01',t:'12-31'}
+  ];
+  QUARTERS.forEach(function(q){
+    var qBtn=document.createElement('button');
+    qBtn.textContent=q.lbl;
+    qBtn.style.cssText='background:#efe9db;border:none;color:#6b6355;font-size:10px;padding:3px 8px;border-radius:4px;cursor:pointer;font-weight:600';
+    qBtn.onclick=function(){ dayFrom=q.f; dayTo=q.t; renderAll(); };
+    periodWrap.appendChild(qBtn);
+  });
   bar.appendChild(periodWrap);
   // Right: count + reset
   const right=document.createElement('div');
