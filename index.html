@@ -407,9 +407,14 @@ var RAW; // loaded asynchronously from data.json
 const C={Y:0,M:1,DY:2,ID:3,NM:4,TM:5,ST:6,CT:7,VL:8,QT:9};
 
 // ======== DIVISION MAPPING ========
+// 2026-08-19 B2B 개편 (형님 확정): B2B = SE List 기준 팀(2026 Team/Region),
+// AFS/AMC/Workshops/Spart Part는 Others로 이동. 'Projects'는 SE 미등재 잔류분.
 const DIV_MAP={
   'OR':'B2C','OR_Others':'B2C','IR':'B2C','IR_Others':'B2C','SME':'B2C',
-  'Projects':'B2B','AFS':'B2B','AMC':'B2B','ESCO':'B2B','Spart Part - Counter Sales':'B2B','Workshops':'B2B',
+  'Central Projects':'B2B','ACS - Central':'B2B','EAST':'B2B','ACS - EAST':'B2B',
+  'WEST':'B2B','ACS - West':'B2B','Direct Channel':'B2B','ESCO':'B2B',
+  'Planning':'B2B','Admin':'B2B','Projects':'B2B',
+  'AFS':'Others','AMC':'Others','Workshops':'Others','Spart Part - Counter Sales':'Others',
   'Showrooms':'Others','E-Commerce':'Others','Shop In Shop':'Others'
 };
 const DIV_ORDER=['B2C','B2B','Others'];
