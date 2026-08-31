@@ -645,7 +645,22 @@ function passFilter(r){
   if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) return false; }
   return true;
 }
-function getFiltered(){ return RAW.txn.filter(passFilter); }
+// ── 렌더 1회 동안만 사는 필터 결과 캐시 (2026-08-31 신설) ──────────────
+// 문제: 필터 한 번 클릭 = renderAll() 이 14개 렌더 함수를 부르고, 각 함수가
+// RAW.txn(43,738행)을 자기 몫으로 다시 필터링한다. 실측 결과 **한 번의 조작에
+// 전체 순회 30회 / 누적 1,312,140행 스캔 / 924ms**(데스크톱). 아이패드에선 3~5초라
+// 필터 체크조차 어렵다는 보고(2026-08-31 형님).
+// 해법: 같은 필터 상태에서 같은 결과를 30번 다시 만들 이유가 없으므로 renderAll()
+// 안에서만 결과를 공유한다. 캐시 수명이 렌더 1회라 **stale 캐시가 원천적으로 불가능**
+// (필터가 바뀌면 다음 renderAll 이 새 캐시로 시작한다). renderAll 밖 호출은 캐싱하지
+// 않고 기존과 똑같이 매번 계산한다.
+var _renderCache = null;
+function _memo(key, fn){
+  if(!_renderCache) return fn();          // 렌더 밖 — 기존 동작 그대로
+  if(!(key in _renderCache)) _renderCache[key] = fn();
+  return _renderCache[key];
+}
+function getFiltered(){ return _memo('filtered', function(){ return RAW.txn.filter(passFilter); }); }
 // Same as passFilter, but substitutes a custom Set for the 'team' dimension —
 // used by the independent "By Category (Compare)" panel so its own team
 // toggle doesn't touch the master Team filter (or any other chart/KPI).
@@ -660,13 +675,13 @@ function getFilteredCustomTeam(teamSet){
     return true;
   });
 }
-function getFilteredIds(){ return new Set(getFiltered().map(function(r){return r[C.ID];})); }
+function getFilteredIds(){ return _memo('ids', function(){ return new Set(getFiltered().map(function(r){return r[C.ID];})); }); }
 // For PGI/Remain/Open: filters all dimensions EXCEPT date period (snapshots are period-independent)
 function passFilterNoPeriod(r){
   for(const d of DIMS) if(!SEL[d.key].has(colValCanonical(r,d))) return false;
   return true;
 }
-function getFilteredIdsNoPeriod(){ return new Set(RAW.txn.filter(passFilterNoPeriod).map(function(r){return r[C.ID];})); }
+function getFilteredIdsNoPeriod(){ return _memo('idsNoPeriod', function(){ return new Set(RAW.txn.filter(passFilterNoPeriod).map(function(r){return r[C.ID];})); }); }
 // Same as getFilteredIdsNoPeriod, but substitutes a custom Set for 'team' —
 // used by charts with their own independent team toggle (not tied to the
 // master Team filter), e.g. the Collection/AR snapshot & trend charts.
@@ -699,27 +714,50 @@ function passArFilter(numId, filterMode){
   if(!SEL.cls.has(CLS_MAP[String(numId)]||'Unclassified')) return false;
   return true;
 }
-function available(dk){
-  const result=new Set(), dTarget=DIMS.find(d=>d.key===dk);
-  var skipPeriod=(dk==='team'||dk==='account');
-  RAW.txn.forEach(r=>{
-    let ok=true;
-    if(!skipPeriod){
-      var dy=r[C.DY];
-      if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) ok=false; }
+// ── 전 차원 available 을 한 번 순회로 동시 계산 (2026-08-31 신설) ─────────
+// 기존 available(dk) 는 차원 하나당 RAW.txn(43,738행)을 통째로 순회했고, 그 안에서
+// 다시 DIMS 루프를 돌았다. buildFilterBar 가 9개 차원을 각각 부르니 39만 행 순회 ×
+// 내부 비교 354만 회 = 123ms. 필터를 누를 때마다 이 비용을 낸다(아이패드 체감 지연).
+// 개선: 행마다 '어느 차원을 통과했는지'를 비트마스크로 **한 번만** 구하고, 차원별
+// '검사 대상' 마스크와 비교해 9개 결과를 동시에 채운다. 순회 9회 → 1회.
+// 판정 규칙(자기 차원 제외 / account 는 dk=account 일 때만 / div 계산 시 team 무시 /
+// cls 는 dk=cls 일 때만 / team·account 는 기간 무시)은 원본과 1:1로 옮겼다.
+function availableAll(){
+  return _memo('availAll', function(){
+    var n=DIMS.length, res={}, need=[], skipP=[], k, j;
+    for(k=0;k<n;k++){
+      var dk=DIMS[k].key, m=0;
+      for(j=0;j<n;j++){
+        var d=DIMS[j];
+        if(d.key===dk) continue;
+        if(d.key==='account' && dk!=='account') continue;
+        if(d.key==='team' && dk==='div') continue;
+        if(d.key==='cls' && dk!=='cls') continue;
+        m |= (1<<j);
+      }
+      need.push(m);
+      skipP.push(dk==='team'||dk==='account');
+      res[dk]=new Set();
     }
-    if(!ok) return;
-    for(const d of DIMS){
-      if(d.key===dk) continue;
-      if(d.key==='account' && dk!=='account') continue;
-      if(d.key==='team' && dk==='div') continue;
-      if(d.key==='cls' && dk!=='cls') continue;
-      if(!SEL[d.key].has(colVal(r,d))){ok=false;break;}
+    var txn=RAW.txn, vals=new Array(n);
+    for(var i=0;i<txn.length;i++){
+      var r=txn[i], mask=0;
+      for(j=0;j<n;j++){
+        var v=colVal(r,DIMS[j]);
+        vals[j]=v;
+        if(SEL[DIMS[j].key].has(v)) mask|=(1<<j);
+      }
+      var periodOK=true, dy=r[C.DY];
+      if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) periodOK=false; }
+      for(k=0;k<n;k++){
+        if(!skipP[k] && !periodOK) continue;
+        if((mask & need[k])===need[k]) res[DIMS[k].key].add(vals[k]);
+      }
     }
-    if(ok) result.add(colVal(r,dTarget));
+    return res;
   });
-  return result;
 }
+function available(dk){ return availableAll()[dk]; }
 
 // ======== BUILD FILTER BAR ========
 function buildFilterBar(){
@@ -952,7 +990,7 @@ function renderKPI(){
   // 2026: uses current filter (respects Year filter)
   // 2024/2025: uses passFilterExceptYear so baselines always show regardless of Year filter selection
   var totals={};
-  var dataAllYears=RAW.txn.filter(passFilterExceptYear);
+  var dataAllYears=_memo('exceptYear', function(){ return RAW.txn.filter(passFilterExceptYear); });
   [2024,2025,2026].forEach(function(yr){
     var sub=(yr===2026?data:dataAllYears).filter(function(r){return r[C.Y]===yr;});
     totals[yr]={val:sub.reduce(function(s,r){return s+gv(r);},0),ac:new Set(sub.map(function(r){return r[C.ID];})).size};
@@ -1271,10 +1309,19 @@ function renderMonthly(){
   dc('monthly');
   var data=getFiltered(),
       months=['01','02','03','04','05','06','07','08','09','10','11','12'],
-      years=[...SEL.year].sort(),
-      ds=years.map(function(yr){return{
+      years=[...SEL.year].sort();
+  // 한 번 순회로 (연도|월) 버킷 집계 (2026-08-31).
+  // 기존: months.map 안에서 연도×12 = 최대 36번 data 전체를 다시 filter+reduce 했다
+  // (필터결과 1.5만 행 기준 54만 회 순회 = renderMonthly 330ms, 전체 렌더의 40%).
+  // 결과값은 동일하고 순회만 1회로 줄인다.
+  var _mb={};
+  for(var _i=0;_i<data.length;_i++){
+    var _r=data[_i], _k=_r[C.Y]+'|'+_r[C.M];
+    _mb[_k]=(_mb[_k]||0)+gv(_r);
+  }
+  var ds=years.map(function(yr){return{
         label:String(yr),
-        data:months.map(function(m){return data.filter(function(r){return r[C.Y]===yr&&r[C.M]===m;}).reduce(function(s,r){return s+gv(r);},0);}),
+        data:months.map(function(m){return _mb[yr+'|'+m]||0;}),
         borderColor:CY[yr]||TC('#6b6355'),backgroundColor:(CY[yr]||'#6b6355')+'33',
         tension:.3,fill:false,pointRadius:3,borderWidth:2,
         datalabels:{display:false}
@@ -1289,7 +1336,7 @@ function renderMonthly(){
       }
     };
   });
-  charts['monthly']=new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{display:true}},scales:{x:{ticks:{color:TC('#948c7b')},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
+  charts['monthly']=new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:months,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{display:true}},scales:{x:{ticks:{color:TC('#948c7b')},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
 }
 
 // ======== IN-CHART DIVISION TOGGLE (By Team / By Category) ========
@@ -1323,7 +1370,7 @@ function renderTeam(){
   dc('team');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:teams.map(function(t){return data.filter(function(r){return r[C.Y]===yr&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#6b6355')+'cc',borderRadius:3};});
-  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#453f35'),font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
+  charts['team']=new Chart(document.getElementById('teamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#453f35'),font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
 }
 
 // By Category has its own independent team-selection state (SEL_team1) —
@@ -1362,7 +1409,7 @@ function renderCat(){
   renderTeamToggle1('divToggleCat');
   var data=getFilteredCustomTeam(SEL_team1), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#6b6355')+'cc',borderRadius:3};});
-  charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'top',color:TC('#453f35'),font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
+  charts['cat']=new Chart(document.getElementById('catChart'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'top',color:TC('#453f35'),font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
 }
 
 // ======== Independent compare panel: By Category (Compare) ========
@@ -1401,16 +1448,16 @@ function renderCat2(){
   renderTeamToggle2('teamToggleCat2');
   var data=getFilteredCustomTeam(SEL_team2), cats=[...new Set(data.map(function(r){return r[C.CT];}))].sort(), years=[...SEL.year].sort(),
       ds=years.map(function(yr){return{label:String(yr),data:cats.map(function(c){return data.filter(function(r){return r[C.Y]===yr&&r[C.CT]===c;}).reduce(function(s,r){return s+gv(r);},0);}),backgroundColor:(CY[yr]||'#6b6355')+'cc',borderRadius:3};});
-  charts['cat2']=new Chart(document.getElementById('catChart2'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'top',color:TC('#453f35'),font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
+  charts['cat2']=new Chart(document.getElementById('catChart2'),{type:'bar',data:{labels:cats,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'top',color:TC('#453f35'),font:{size:8,weight:'600'},rotation:-45,formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9},maxRotation:45},grid:{display:false}},y:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
 }
 
 function renderGrowth(){
   dc('growth');
   var data=getFiltered(), teams=[...new Set(data.map(function(r){return r[C.TM];}))].sort(), years=[...SEL.year].sort(), pairs=[];
   for(var i=0;i<years.length-1;i++) pairs.push([years[i],years[i+1]]);
-  if(!pairs.length){charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{datalabels:{display:false}}}});return;}
+  if(!pairs.length){charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{datalabels:{display:false}}}});return;}
   var ds=pairs.map(function(p){var y1=p[0],y2=p[1],g=teams.map(function(t){var v1=data.filter(function(r){return r[C.Y]===y1&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0),v2=data.filter(function(r){return r[C.Y]===y2&&r[C.TM]===t;}).reduce(function(s,r){return s+gv(r);},0);return v1?((v2-v1)/v1*100):null;});return{label:y1+'\u2192'+y2+' Growth %',data:g,backgroundColor:g.map(function(v){return v!=null&&v>=0?'#1d6b45cc':'#b3261ecc';}),borderRadius:3};});
-  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?TC('#1d6b45'):TC('#b3261e');},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return v+'%';}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
+  charts['growth']=new Chart(document.getElementById('growthChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start';},color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex];return v!=null&&v>=0?TC('#1d6b45'):TC('#b3261e');},font:{size:9,weight:'700'},formatter:function(v){return v!=null?Math.round(v)+'%':'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return v+'%';}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
 }
 
 // ======== OUD CHARTS ========
@@ -1434,7 +1481,7 @@ function renderOudTeamChart(){
   });
   var teams=Object.keys(teamData).sort(function(a,b){return (isVal?teamData[b].v:teamData[b].q)-(isVal?teamData[a].v:teamData[a].q);});
   var vals=teams.map(function(t){return isVal?teamData[t].v:teamData[t].q;});
-  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#8a6d2ecc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#8a6d2e'),font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
+  charts['oudTeam']=new Chart(document.getElementById('oudTeamChart'),{type:'bar',data:{labels:teams.map(teamLabel),datasets:[{label:'OUD ('+oud.current.date+')',data:vals,backgroundColor:'#8a6d2ecc',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,indexAxis:'y',plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#8a6d2e'),font:{size:9,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
 }
 
 // OUD Monthly Trend (Aug'25~Jul'26) \u2014 2026-08-09 \ud615\ub2d8 \ud655\uc815 \uaddc\uce59: \uc6d4 \ub9c8\uc9c0\ub9c9\ub0a0 \uc815\ud655 \uc2a4\ub0c5\uc0f7\uc774
@@ -1503,7 +1550,7 @@ function renderOudDeltaChart(){
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:90,font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf("'26")!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? TC('#8c1d2f') : '#c4bba6'; }},grid:{color:TC('#fffdf8')}},y:{stacked:true,grace:'10%',ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:90,font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf("'26")!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? TC('#8c1d2f') : '#c4bba6'; }},grid:{color:TC('#fffdf8')}},y:{stacked:true,grace:'10%',ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
@@ -1595,7 +1642,7 @@ function renderColSnapshotChart(){
     {label:'Collection (MTD)',data:teams.map(function(t){return teamCol[t]||0;}),backgroundColor:'#1d6b45cc',borderRadius:3},
     {label:'Receivable (Balance)',data:teams.map(function(t){return teamBal[t]||0;}),backgroundColor:'#8c1d2fcc',borderRadius:3},
     {label:'Overdue',data:teams.map(function(t){return teamOvd[t]||0;}),backgroundColor:'#b3261ecc',borderRadius:3},
-  ]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{title:{display:true,text:'As of '+col.date,color:TC('#948c7b'),font:{size:10,weight:'400'},padding:{bottom:6}},legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#453f35'),font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,indexAxis:'y',plugins:{title:{display:true,text:'As of '+col.date,color:TC('#948c7b'),font:{size:10,weight:'400'},padding:{bottom:6}},legend:{labels:{color:TC('#6b6355'),font:{size:11}}},datalabels:{anchor:'end',align:'end',color:TC('#453f35'),font:{size:8,weight:'600'},formatter:function(v){return v?fmt(v):'';}}},scales:{x:{ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},y:{ticks:{color:TC('#6b6355'),font:{size:10}},grid:{display:false}}}}});
 }
 
 var _colTrendTeamState={sel:null};
@@ -1662,7 +1709,7 @@ function renderColTrendChart(){
     {type:'bar', label:'_rank1', data:slotData(0), backgroundColor:slotColor(0), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:2, yAxisID:'y'},
     {type:'bar', label:'_rank2', data:slotData(1), backgroundColor:slotColor(1), grouped:false, categoryPercentage:0.7, barPercentage:0.85, borderRadius:2, order:1, yAxisID:'y'},
     {type:'line', label:colMeta.name, data:colData, borderColor:colMeta.vivid, backgroundColor:colMeta.vivid+'33', pointBackgroundColor:colMeta.vivid, tension:.3, fill:false, pointRadius:3, borderWidth:2, spanGaps:false, order:0, yAxisID:'y1', datalabels:{display:false}},
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{
     legend:{labels:{color:TC('#6b6355'),font:{size:10},generateLabels:function(){
       return ['bal','ovd','col'].map(function(m){ var meta=COL_TREND_METRIC_META[m]; return {text:meta.name, fillStyle:meta.vivid, strokeStyle:meta.vivid, fontColor:TC('#6b6355')}; });
     }}},
@@ -2293,6 +2340,8 @@ function exportExcel(){
 
 // ======== RENDER ALL ========
 function renderAll(){
+  _renderCache = {};              // 이번 렌더 동안만 필터 결과를 공유한다
+  try{
   buildFilterBar();
   if(_openFilter){
     var wraps=document.querySelectorAll('.ms-wrap');
@@ -2309,6 +2358,7 @@ function renderAll(){
   renderKPI(); renderOudKPI(); renderArKPI(); renderDsoKPI(); renderStatus();
   renderMonthly(); renderTeam(); renderCat(); renderGrowth(); renderCat2();
   renderOudTeamChart(); renderOudDeltaChart(); renderColSnapshotChart(); renderColTrendChart();
+  } finally { _renderCache = null; }   // 렌더가 끝나면 폐기 — stale 캐시 불가
 }
 // ======== ASYNC DATA LOADER ========
 (function(){
@@ -3033,7 +3083,7 @@ function _renderCompareChart(wrapId, accts, chartRef, avgOvd, modeLabel, titleCo
   chartRef.ch=new Chart(ctx,{
     type:'bubble',data:{datasets:datasets},
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,animation:false,
       plugins:{
         legend:{labels:{color:TC('#26221c'),font:{size:10}}},
         datalabels:{display:false},
@@ -3317,7 +3367,7 @@ function renderFHChart(accts){
     type:'bubble',
     data:{datasets:datasets},
     options:{
-      responsive:true,maintainAspectRatio:false,
+      responsive:true,maintainAspectRatio:false,animation:false,
       onClick:function(evt,els){
         if(els.length){
           var pt=els[0];
@@ -3567,7 +3617,7 @@ function fhShowTrend(accountId, accountName){
     _fhTrendCharts.push(new Chart(document.getElementById('fhTrendOvd').getContext('2d'),{
       type:'line',
       data:{labels:dates,datasets:[{label:'OVD Rate %',data:ovdRates,borderColor:TC('#b3261e'),backgroundColor:'rgba(179,38,30,0.1)',borderWidth:2,pointRadius:3,fill:true,tension:0.3}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},datalabels:{display:false}},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false},datalabels:{display:false}},
         scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9}},grid:{color:TC('#fffdf8')}},
           y:{ticks:{color:TC('#6b6355'),font:{size:9},callback:function(v){return v+'%';}},grid:{color:TC('#fffdf8')}}}}
     }));
@@ -3581,7 +3631,7 @@ function fhShowTrend(accountId, accountName){
         {label:'AR Bal (K)',data:bals,borderColor:TC('#a54b5e'),backgroundColor:'rgba(165,75,94,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3},
         {label:'Overdue (K)',data:ovds,borderColor:TC('#c4574f'),backgroundColor:'rgba(196,87,79,0.08)',borderWidth:2,pointRadius:2,fill:true,tension:0.3}
       ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC('#26221c'),font:{size:10}}},datalabels:{display:false}},
+      options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#26221c'),font:{size:10}}},datalabels:{display:false}},
         scales:{x:{ticks:{color:TC('#6b6355'),font:{size:9}},grid:{color:TC('#fffdf8')}},
           y:{ticks:{color:TC('#6b6355'),font:{size:9},callback:function(v){return v+'K';}},grid:{color:TC('#fffdf8')}}}}
     }));
