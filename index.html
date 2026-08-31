@@ -27,6 +27,12 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .header-right span{display:flex;flex-direction:column;gap:2px}
 .header-right .lbl{color:var(--muted2);font-size:9px;text-transform:uppercase;letter-spacing:.5px}
 .header-right .val{color:var(--text);font-weight:600}
+.upd-wrap{align-items:flex-start!important}
+.btn-upd{padding:5px 13px;background:var(--primary);color:var(--white);border:none;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:opacity .15s;white-space:nowrap}
+.btn-upd:hover:not(:disabled){opacity:.88}
+.btn-upd:disabled{opacity:.5;cursor:default}
+.upd-note{font-size:9.5px;color:var(--muted2);max-width:250px;line-height:1.4;white-space:normal}
+.upd-note.err{color:var(--red)}
 .container{max-width:1440px;margin:0 auto;padding:20px}
 
 /* ===== FILTER BAR ===== */
@@ -182,6 +188,10 @@ tfoot .fz{background:var(--bg)}
     <span><span class="lbl">Accounts</span><span class="val" id="hdrAccounts">-</span></span>
     <span><span class="lbl">OUD Date</span><span class="val" id="hdrOudDate">-</span></span>
     <span><span class="lbl">AR Date</span><span class="val" id="hdrArDate">-</span></span>
+    <span class="upd-wrap">
+      <button class="btn-upd" id="stpUpd">🔄 Data Update</button>
+      <span class="upd-note" id="stpUpdNote">엔드포인트 확인 중…</span>
+    </span>
   </div>
 </div>
 
@@ -3583,6 +3593,74 @@ function fhCloseTrend(){
   _fhTrendCharts.forEach(function(c){try{c.destroy();}catch(e){}});
   _fhTrendCharts=[];
 }
+</script>
+
+<!-- ===== Data Update 버튼 (2026-08-31 신설) =====
+     누른 시점 기준으로 ZDSAL 4종(Invoice/PGI/Remaining/Open)을 SAP에서 재추출하고
+     대시보드를 갱신·배포한다. 같은 날짜 데이터는 통합본에서 제거 후 전량 교체된다
+     (refresh_dashboard.update_raw_from_daily 의 당월 전량 교체 로직).
+     엔드포인트 주소는 무료 quick tunnel이라 바뀔 수 있어 api_endpoint.json 에서 읽는다. -->
+<script>
+(function(){
+  var API='', TOK='', poll=null, t0=0;
+  var btn=document.getElementById('stpUpd'), note=document.getElementById('stpUpdNote');
+  if(!btn) return;
+  function say(m, err){ note.textContent=m; note.classList.toggle('err', !!err); }
+  function reset(){ btn.disabled=false; btn.textContent='\uD83D\uDD04 Data Update'; }
+  function watch(){
+    clearInterval(poll);
+    poll=setInterval(function(){
+      fetch(API+'/status?job=stp',{cache:'no-store'}).then(function(r){return r.json();})
+      .then(function(s){
+        var el=Math.floor((Date.now()-t0)/1000);
+        if(s.running){
+          say('SAP 조회 중\u2026 '+Math.floor(el/60)+'분 '+(el%60)+'초 경과 (보통 20분)');
+        } else {
+          clearInterval(poll); reset();
+          if(s.rc===0) say('업데이트 완료 \u2014 새로고침하면 최신 수치가 보입니다');
+          else say('업데이트 실패 (rc='+s.rc+'). 화면은 직전 상태 그대로입니다', true);
+        }
+      }).catch(function(){ /* 일과성 오류는 다음 폴링에서 회복 */ });
+    }, 15000);
+  }
+  btn.onclick=function(){
+    if(!API){ say('갱신 엔드포인트가 설정되지 않았습니다 (서버 확인 필요)', true); return; }
+    btn.disabled=true; btn.textContent='요청 중\u2026'; t0=Date.now();
+    fetch(API+'/run/stp?t='+encodeURIComponent(TOK), {method:'POST'}).then(function(r){
+      if(r.status===202){
+        btn.textContent='SAP 조회 중\u2026';
+        say('SAP 재조회를 시작했습니다 \u2014 약 20분. 창을 닫아도 서버에서 계속 진행됩니다.');
+        watch();
+      } else if(r.status===409){
+        r.json().then(function(j){
+          reset();
+          say('이미 '+(j.label||'다른 작업')+' 갱신이 진행 중입니다 ('
+              +Math.floor((j.elapsed||0)/60)+'분 경과) \u2014 SAP 세션은 하나뿐입니다', true);
+        });
+      } else {
+        reset(); say('요청이 거부됐습니다 (HTTP '+r.status+')', true);
+      }
+    }).catch(function(){
+      reset(); say('서버에 연결하지 못했습니다 \u2014 갱신 서비스가 내려갔을 수 있습니다', true);
+    });
+  };
+  fetch('api_endpoint.json',{cache:'no-store'}).then(function(r){return r.json();})
+  .then(function(ep){
+    API=ep.url||''; TOK=ep.token||'';
+    if(!API){ say('엔드포인트 미설정 (서버 확인 필요)', true); return; }
+    say('누르면 Invoice\u00B7PGI\u00B7Remaining\u00B7Open을 지금 시점으로 재추출합니다 (약 20분)');
+    return fetch(API+'/status?job=stp',{cache:'no-store'}).then(function(r){return r.json();})
+    .then(function(s){
+      if(s.running){                    // 다른 창에서 이미 도는 중이면 이어서 표시
+        btn.disabled=true; btn.textContent='SAP 조회 중\u2026';
+        t0=s.started ? s.started*1000 : Date.now();
+        watch();
+      } else if(s.busy){
+        say('현재 '+(s.busy_job==='fg'?'FG 재고':'다른 작업')+' 갱신 중입니다 \u2014 끝난 뒤 눌러주십시오', true);
+      }
+    });
+  }).catch(function(){ say('엔드포인트를 불러오지 못했습니다', true); });
+})();
 </script>
 </body>
 </html>
