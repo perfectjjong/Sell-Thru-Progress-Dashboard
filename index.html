@@ -654,12 +654,13 @@ function passFilter(r){
 // 안에서만 결과를 공유한다. 캐시 수명이 렌더 1회라 **stale 캐시가 원천적으로 불가능**
 // (필터가 바뀌면 다음 renderAll 이 새 캐시로 시작한다). renderAll 밖 호출은 캐싱하지
 // 않고 기존과 똑같이 매번 계산한다.
+// 🔴 캐싱 철회 (2026-09-01): buildFilterBar 가 available()/getFiltered() 를 부르는
+// **도중에 SEL 을 바꾼다**(cls/team 의 '가능목록 변경 시 리셋'). 렌더 시작 시점 결과를
+// 캐싱하면 그 변경이 이후 함수에 반영되지 않아 필터가 어긋난다(형님 리포트 2026-09-01).
+// 순회 횟수보다 정확성이 우선이므로 캐시는 쓰지 않는다. 성능은 SEL 변경과 무관한
+// 지점(월별 버킷 집계, 차트 animation:false)에서만 확보한다.
 var _renderCache = null;
-function _memo(key, fn){
-  if(!_renderCache) return fn();          // 렌더 밖 — 기존 동작 그대로
-  if(!(key in _renderCache)) _renderCache[key] = fn();
-  return _renderCache[key];
-}
+function _memo(key, fn){ return fn(); }
 function getFiltered(){ return _memo('filtered', function(){ return RAW.txn.filter(passFilter); }); }
 // Same as passFilter, but substitutes a custom Set for the 'team' dimension —
 // used by the independent "By Category (Compare)" panel so its own team
@@ -714,50 +715,27 @@ function passArFilter(numId, filterMode){
   if(!SEL.cls.has(CLS_MAP[String(numId)]||'Unclassified')) return false;
   return true;
 }
-// ── 전 차원 available 을 한 번 순회로 동시 계산 (2026-08-31 신설) ─────────
-// 기존 available(dk) 는 차원 하나당 RAW.txn(43,738행)을 통째로 순회했고, 그 안에서
-// 다시 DIMS 루프를 돌았다. buildFilterBar 가 9개 차원을 각각 부르니 39만 행 순회 ×
-// 내부 비교 354만 회 = 123ms. 필터를 누를 때마다 이 비용을 낸다(아이패드 체감 지연).
-// 개선: 행마다 '어느 차원을 통과했는지'를 비트마스크로 **한 번만** 구하고, 차원별
-// '검사 대상' 마스크와 비교해 9개 결과를 동시에 채운다. 순회 9회 → 1회.
-// 판정 규칙(자기 차원 제외 / account 는 dk=account 일 때만 / div 계산 시 team 무시 /
-// cls 는 dk=cls 일 때만 / team·account 는 기간 무시)은 원본과 1:1로 옮겼다.
-function availableAll(){
-  return _memo('availAll', function(){
-    var n=DIMS.length, res={}, need=[], skipP=[], k, j;
-    for(k=0;k<n;k++){
-      var dk=DIMS[k].key, m=0;
-      for(j=0;j<n;j++){
-        var d=DIMS[j];
-        if(d.key===dk) continue;
-        if(d.key==='account' && dk!=='account') continue;
-        if(d.key==='team' && dk==='div') continue;
-        if(d.key==='cls' && dk!=='cls') continue;
-        m |= (1<<j);
-      }
-      need.push(m);
-      skipP.push(dk==='team'||dk==='account');
-      res[dk]=new Set();
+function available(dk){
+  const result=new Set(), dTarget=DIMS.find(d=>d.key===dk);
+  var skipPeriod=(dk==='team'||dk==='account');
+  RAW.txn.forEach(r=>{
+    let ok=true;
+    if(!skipPeriod){
+      var dy=r[C.DY];
+      if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) ok=false; }
     }
-    var txn=RAW.txn, vals=new Array(n);
-    for(var i=0;i<txn.length;i++){
-      var r=txn[i], mask=0;
-      for(j=0;j<n;j++){
-        var v=colVal(r,DIMS[j]);
-        vals[j]=v;
-        if(SEL[DIMS[j].key].has(v)) mask|=(1<<j);
-      }
-      var periodOK=true, dy=r[C.DY];
-      if(dy){ var md=dy.substring(5); if(md<dayFrom||md>dayTo) periodOK=false; }
-      for(k=0;k<n;k++){
-        if(!skipP[k] && !periodOK) continue;
-        if((mask & need[k])===need[k]) res[DIMS[k].key].add(vals[k]);
-      }
+    if(!ok) return;
+    for(const d of DIMS){
+      if(d.key===dk) continue;
+      if(d.key==='account' && dk!=='account') continue;
+      if(d.key==='team' && dk==='div') continue;
+      if(d.key==='cls' && dk!=='cls') continue;
+      if(!SEL[d.key].has(colVal(r,d))){ok=false;break;}
     }
-    return res;
+    if(ok) result.add(colVal(r,dTarget));
   });
+  return result;
 }
-function available(dk){ return availableAll()[dk]; }
 
 // ======== BUILD FILTER BAR ========
 function buildFilterBar(){
