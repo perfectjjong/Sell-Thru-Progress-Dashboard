@@ -234,9 +234,9 @@ tfoot .fz{background:var(--bg)}
   <div class="chart-box"><h3>YoY Growth by Team - Sell thru</h3><canvas id="growthChart"></canvas></div>
   <div class="chart-box"><div class="chart-box-hdr"><h3>By Category (Compare) - Sell thru</h3><div class="div-toggle" id="teamToggleCat2"></div></div><canvas id="catChart2"></canvas></div>
   <div class="chart-box"><h3>OUD by Team (Current)</h3><canvas id="oudTeamChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>OUD Monthly Trend (2025 vs 2026)</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3 id="oudDeltaTitle">OUD Monthly Trend</h3><div class="div-toggle" id="oudDeltaToggle"></div></div><canvas id="oudDeltaChart"></canvas></div>
   <div class="chart-box"><h3>Collection / Receivable / Overdue — Current Month</h3><canvas id="colSnapChart"></canvas></div>
-  <div class="chart-box"><div class="chart-box-hdr"><h3>Collection / Receivable / Overdue — Monthly Trend (2025 vs 2026)</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
+  <div class="chart-box"><div class="chart-box-hdr"><h3 id="colTrendTitle">Collection / Receivable / Overdue — Monthly Trend</h3><div class="div-toggle" id="colTrendToggle"></div></div><canvas id="colTrendChart"></canvas></div>
 </div>
 
 <!-- All Accounts Table (unified: Sell-Thru + OUD + AR + Collection) -->
@@ -1467,6 +1467,15 @@ function renderOudTeamChart(){
 // Linked to the main filter (Team/Division/Class/Category/Status/Account), same convention
 // as the other OUD charts: period(day-range) is ignored since these are point-in-time balances.
 var MONTH_LABELS={'01':'Jan','02':'Feb','03':'Mar','04':'Apr','05':'May','06':'Jun','07':'Jul','08':'Aug','09':'Sep','10':'Oct','11':'Nov','12':'Dec'};
+// 2026-09-02: 연도 하드코딩(['2025','2026']) 제거 — 데이터에 실제로 존재하는 연도 중
+// 최근 2개를 자동 선택한다. 흐림(이전)/선명(최신) 2단 색 체계라 3개 이상은 표현 불가.
+// 하드코딩이던 시절엔 새 연도 데이터가 들어와도 차트에 안 그려졌다(8월 누락 사고와 동일 계열).
+function _trendYears(monthly){
+  var ys={};
+  (monthly||[]).forEach(function(s){ ys[String(s.month).slice(0,4)]=1; });
+  var arr=Object.keys(ys).sort();
+  return arr.length>2 ? arr.slice(-2) : arr;
+}
 var TEAM_PALETTE=[TC('#8c1d2f'),TC('#1d6b45'),TC('#a8863c'),TC('#b3261e'),TC('#6d4b78'),'#2a5a54',TC('#b45f18'),'#a5386b','#5f7a2a','#54507a',TC('#2a7a6e'),TC('#8a6d2e'),'#7a4a8a',TC('#948c7b')];
 // Independent B2C-team toggle (2026-08-10 형님 지시) — not tied to the
 // master Team filter or to any other chart's toggle.
@@ -1499,8 +1508,11 @@ function renderOudDeltaChart(){
     byYearMonth[mm][yr]=teamVals;
   });
   var teams=[...allTeams].sort();
+  var YRS=_trendYears(monthly), YR_NEW=YRS[YRS.length-1], YR_SFX="'"+String(YR_NEW).slice(2);
+  var _t=document.getElementById('oudDeltaTitle');
+  if(_t) _t.textContent='OUD Monthly Trend ('+YRS.join(' vs ')+')';
   var pairs=[];
-  MO_ORDER.forEach(function(mm){ ['2025','2026'].forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
+  MO_ORDER.forEach(function(mm){ YRS.forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
   var labels=pairs.map(function(p){ return MONTH_LABELS[p.mm]+" '"+p.yr.slice(2); });
   // 필터(마스터+독자토글) 적용 후의 팀별 값으로 이미 합산된 byYearMonth 기준 총합
   // — 막대 맨 위에 라벨로 표시 (2026-08-12 형님 지시).
@@ -1516,23 +1528,23 @@ function renderOudDeltaChart(){
     return{
       label:teamLabel(t),
       data:pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? (v[t]||0) : null; }),
-      backgroundColor:pairs.map(function(p){ return p.yr==='2025' ? base+'66' : base; }),
+      backgroundColor:pairs.map(function(p){ return p.yr===YR_NEW ? base : base+'66'; }),
       stack:'oud', borderRadius:2
     };
   });
   if(ds.length){
     ds[ds.length-1].datalabels={
       display:true, anchor:'end', align:'top', offset:2,
-      color:function(ctx){ return pairs[ctx.dataIndex].yr==='2026' ? TC('#8c1d2f') : '#a89b82'; },
-      font:function(ctx){ return pairs[ctx.dataIndex].yr==='2026' ? {size:10,weight:'700'} : {size:9,weight:'400'}; },
+      color:function(ctx){ return pairs[ctx.dataIndex].yr===YR_NEW ? TC('#8c1d2f') : '#a89b82'; },
+      font:function(ctx){ return pairs[ctx.dataIndex].yr===YR_NEW ? {size:10,weight:'700'} : {size:9,weight:'400'}; },
       formatter:function(v,ctx){ var t=totals[ctx.dataIndex]; return t?fmt(t):''; }
     };
   }
-  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:90,font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf("'26")!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf("'26")!==-1 ? TC('#8c1d2f') : '#c4bba6'; }},grid:{color:TC('#fffdf8')}},y:{stacked:true,grace:'10%',ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
+  charts['oudDelta']=new Chart(document.getElementById('oudDeltaChart'),{type:'bar',data:{labels:labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{labels:{color:TC('#6b6355'),font:{size:9}}},datalabels:{display:false},annotation:{annotations:monthBoundaryAnnotations()}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:90,font:function(ctx){ var lbl=(ctx.chart.data.labels[ctx.index]||''); return lbl.indexOf(YR_SFX)!==-1 ? {size:10, weight:'700'} : {size:9, weight:'400'}; },color:function(ctx){ var lbl=labels[ctx.index]||''; return lbl.indexOf(YR_SFX)!==-1 ? TC('#8c1d2f') : '#c4bba6'; }},grid:{color:TC('#fffdf8')}},y:{stacked:true,grace:'10%',ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}}}}});
 }
 
 // Collection/Receivable/Overdue — Current Month snapshot + Monthly Trend
-// (Jan'25~Jul'26 — EXACT month-end snapshots only, see
+// (Jan'25~직전 마감월 — EXACT month-end snapshots only, see
 // load_collection_monthly()/load_ar_monthly() in refresh_dashboard.py).
 // Monthly Trend has its OWN independent team toggle (2026-08-09 형님 지시),
 // not tied to the master Team filter. Current Month has no toggle of its
@@ -1657,8 +1669,11 @@ function renderColTrendChart(){
     var ar=_arMonthlyTotals(snap.month, filteredIds);
     byYearMonth[mm][yr]={col:total, bal:ar.bal, ovd:ar.ovd};
   });
+  var YRS=_trendYears(monthly), YR_NEW=YRS[YRS.length-1], YR_SFX="'"+String(YR_NEW).slice(2);
+  var _t2=document.getElementById('colTrendTitle');
+  if(_t2) _t2.textContent='Collection / Receivable / Overdue — Monthly Trend ('+YRS.join(' vs ')+')';
   var pairs=[];
-  MO_ORDER.forEach(function(mm){ ['2025','2026'].forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
+  MO_ORDER.forEach(function(mm){ YRS.forEach(function(yr){ pairs.push({mm:mm,yr:yr}); }); });
   var labels=pairs.map(function(p){ return MONTH_LABELS[p.mm]+" '"+p.yr.slice(2); });
   // 2026-08-12 형님 지시(Management 가독성 피드백): Collection은 금액이 훨씬 작아서
   // 같은 축에 두면 안 보임 — 오른쪽 보조축(y1)에 선그래프로 분리. Receivable/Overdue만
@@ -1678,7 +1693,7 @@ function renderColTrendChart(){
     return ranked.map(function(r,i){
       if(!r[rankIdx]) return null;
       var meta=COL_TREND_METRIC_META[r[rankIdx].metric];
-      return pairs[i].yr==='2025' ? meta.faded : meta.vivid;
+      return pairs[i].yr===YR_NEW ? meta.vivid : meta.faded;
     });
   }
   var colData=pairs.map(function(p){ var v=byYearMonth[p.mm][p.yr]; return v ? v.col : null; });
@@ -1704,7 +1719,7 @@ function renderColTrendChart(){
         var r=ranked[ctx.dataIndex][rankIdx];
         return !!(r && r.metric==='ovd');
       },
-      align:'center', anchor:'center', color:function(ctx){ return pairs[ctx.dataIndex].yr==='2025' ? '#6d1522' : '#fff'; }, font:{size:8,weight:'700'},
+      align:'center', anchor:'center', color:function(ctx){ return pairs[ctx.dataIndex].yr===YR_NEW ? '#fff' : '#6d1522'; }, font:{size:8,weight:'700'},
       formatter:function(v,ctx){
         var p=pairs[ctx.dataIndex];
         var vals=byYearMonth[p.mm][p.yr];
@@ -1716,7 +1731,7 @@ function renderColTrendChart(){
   },scales:{
     x:{ticks:{autoSkip:false,maxRotation:90,font:{size:9},color:function(ctx){
       var lbl=labels[ctx.index]||'';
-      return lbl.indexOf("'26")!==-1 ? TC('#8c1d2f') : '#c4bba6';
+      return lbl.indexOf(YR_SFX)!==-1 ? TC('#8c1d2f') : '#c4bba6';
     }},grid:{color:TC('#fffdf8')}},
     y:{position:'left',ticks:{color:TC('#948c7b'),callback:function(v){return fmt(v);}},grid:{color:TC('#fffdf8')}},
     y1:{position:'right',grace:'15%',ticks:{color:colMeta.vivid,callback:function(v){return fmt(v);}},grid:{display:false}}
