@@ -612,6 +612,19 @@ function _initFilters(){
     var id=r[C.ID], yr=r[C.Y];
     if(!(id in _acctYear) || yr>=_acctYear[id]){ _acctYear[id]=yr; ACCT_TEAM[id]=r[C.TM]; }
   });
+  // SSOT 우선 적용 (2026-09-03 형님 확정: "SSOT 기준으로 하세요").
+  // 위 루프는 셀스루 txn 이 있는 계정만 팀을 얻는다. AR·수금만 발생하고 셀스루
+  // 거래가 없는 계정은 SSOT(shared_classification)가 팀을 명시해도 '팀 미상'이
+  // 되어 AR/Collection 차트에서 통째로 빠졌다 — OR 채널 딜러의 형제 계정
+  // 1110000001·1110000003(Hamad A. Al-Manea)·1110000004(Alsheta & Alsaif)가
+  // 20개월 누계 Receivable 80.6M(OR 표시액의 5.15%, 2025-03 최대 9.62%) 누락.
+  // refresh_dashboard.py 가 실어주는 acct_team_ssot 로 txn 팀을 덮어쓴다.
+  if(RAW.acct_team_ssot){
+    Object.keys(RAW.acct_team_ssot).forEach(function(id){
+      var nid=isNaN(+id)?id:+id;
+      ACCT_TEAM[nid]=RAW.acct_team_ssot[id];
+    });
+  }
 }
 
 // ======== OUD value with Category filter ========
