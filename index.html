@@ -965,10 +965,12 @@ function calcDaysYtd(){
   var d=new Date(yr,parseInt(p[0])-1,parseInt(p[1]));
   return Math.round((d-new Date(yr,0,1))/86400000)+1;
 }
+// 2026-09-03: o1/o2/o3 를 RAW aging 버킷 원본으로 바꾸면서 산식도 정정.
+// 종전엔 Not Due(=bal-ovd)를 따로 더했는데, RAW 버킷 세 구간의 합이 곧 Balance 이므로
+// (원본 항등식) Not Due 를 더하면 이중계상이 된다. 순수 채권연령 가중평균으로 계산한다.
 function calcAgedDso(bal,ovd,o1,o2,o3){
   if(!bal||bal<=0) return null;
-  var nd=Math.max(0,bal-ovd);
-  return (nd*15+(o1||0)*15+(o2||0)*45+(o3||0)*90)/bal;
+  return ((o1||0)*15+(o2||0)*45+(o3||0)*90)/bal;
 }
 const CY={'2024':TC('#a8863c'),'2025':TC('#8c1d2f'),'2026':TC('#1d6b45')};
 const CS={'Active':TC('#8c1d2f'),'New_2025':TC('#1d6b45'),'Re-active_2025':TC('#6d4b78'),'Need to re-active':TC('#b3261e'),'New':'#2a5a54','Re-active from 2024':TC('#b45f18')};
@@ -1262,7 +1264,7 @@ function renderDsoKPI(){
   var aDso=calcAgedDso(tBal,tOvd,tO1,tO2,tO3);
   var fd=function(v){return v!=null?v.toFixed(1)+'d':'N/A';};
   g.innerHTML='<div class="dso-card"><div class="dso-label">DSO — Simple ('+AR_SNAP.date+')</div><div class="dso-val">'+fd(sDso)+'</div><div class="dso-sub">AR '+fmt(tBal)+' \xF7 (YTD Rev '+fmt(tRev)+' \xD71.15 VAT) \xD7 '+days+'d</div></div>'
-             +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">Not Due\xD715 + OVD0-30\xD715 + OVD30-60\xD745 + OVD60+\xD790 (days)</div></div>';
+             +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">Age0-30\xD715 + Age31-60\xD745 + Age61+\xD790 (days, RAW aging)</div></div>';
 }
 
 // ======== STATUS CARDS ========
@@ -2046,9 +2048,9 @@ function getSortCols(){
     cols.push({key:'cr_lim',label:'Cr.Limit',get:function(a){return a.ar_cl;},type:'num',grp:'cr'});
     cols.push({key:'ar_bal',label:'Balance',get:function(a){return a.ar_bal;},type:'num',grp:'ar'});
     cols.push({key:'ar_ovd',label:'Overdue',get:function(a){return a.ar_ovd;},type:'num',grp:'ar'});
-    cols.push({key:'ar_o1',label:'OVD 0-30',get:function(a){return a.ar_o1;},type:'num',grp:'ar'});
-    cols.push({key:'ar_o2',label:'OVD 30-60',get:function(a){return a.ar_o2;},type:'num',grp:'ar'});
-    cols.push({key:'ar_o3',label:'OVD 60+',get:function(a){return a.ar_o3;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o1',label:'Age 0-30',get:function(a){return a.ar_o1;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o2',label:'Age 31-60',get:function(a){return a.ar_o2;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o3',label:'Age 61+',get:function(a){return a.ar_o3;},type:'num',grp:'ar'});
   }
   if(hasCol){
     cols.push({key:'col_mtd',label:'Col MTD',get:function(a){return a.col_mtd;},type:'num',grp:'col'});
@@ -3450,9 +3452,9 @@ function renderFHTable(accts){
     +th('bal',      'AR Balance')
     +th('ovd',      'Overdue')
     +th('ovd_rate', 'OVD Rate')
-    +th('o1',       'OVD 0-30')
-    +th('o2',       'OVD 30-60')
-    +th('o3',       'OVD 60+')
+    +th('o1',       'Age 0-30')
+    +th('o2',       'Age 31-60')
+    +th('o3',       'Age 61+')
     +th('dso',      dsoLabel)
     +th('vs180',    'vs DPO 180d')
     +th('quad',     'Quadrant')
