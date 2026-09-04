@@ -968,9 +968,11 @@ function calcDaysYtd(){
 // 2026-09-03: o1/o2/o3 를 RAW aging 버킷 원본으로 바꾸면서 산식도 정정.
 // 종전엔 Not Due(=bal-ovd)를 따로 더했는데, RAW 버킷 세 구간의 합이 곧 Balance 이므로
 // (원본 항등식) Not Due 를 더하면 이중계상이 된다. 순수 채권연령 가중평균으로 계산한다.
-function calcAgedDso(bal,ovd,o1,o2,o3){
+// 가중치 = 20개월 RAW 실측 가중평균 일수 (2026-09-04). 종전엔 61일 이상 전체에
+// 90일을 줬는데, 실제로는 1년 초과 구간의 평균이 1,369일(3.75년)이라 심하게 과소였다.
+function calcAgedDso(bal,ovd,o1,o2,o3,o4,o5){
   if(!bal||bal<=0) return null;
-  return ((o1||0)*15+(o2||0)*45+(o3||0)*90)/bal;
+  return ((o1||0)*15+(o2||0)*45+(o3||0)*105+(o4||0)*250+(o5||0)*1370)/bal;
 }
 const CY={'2024':TC('#a8863c'),'2025':TC('#8c1d2f'),'2026':TC('#1d6b45')};
 const CS={'Active':TC('#8c1d2f'),'New_2025':TC('#1d6b45'),'Re-active_2025':TC('#6d4b78'),'Need to re-active':TC('#b3261e'),'New':'#2a5a54','Re-active from 2024':TC('#b45f18')};
@@ -1245,14 +1247,14 @@ function renderDsoKPI(){
   if(!AR_SNAP){g.style.display='none';return;}
   g.style.display='';
   var filteredIds=getFilteredIdsNoPeriod();
-  var tBal=0,tOvd=0,tO1=0,tO2=0,tO3=0,tRev=0;
+  var tBal=0,tOvd=0,tO1=0,tO2=0,tO3=0,tO4=0,tO5=0,tRev=0;
   Object.keys(AR_SNAP.accts).forEach(function(id){
     var nid=isNaN(+id)?id:+id;
     var inST=!!ACCT_TEAM[nid];
     if(inST&&!filteredIds.has(nid)) return;
     if(!inST&&!SEL.div.has('Others')) return;
     var a=AR_SNAP.accts[id];
-    tBal+=a.bal||0; tOvd+=a.ovd||0; tO1+=a.o1||0; tO2+=a.o2||0; tO3+=a.o3||0;
+    tBal+=a.bal||0; tOvd+=a.ovd||0; tO1+=a.o1||0; tO2+=a.o2||0; tO3+=a.o3||0; tO4+=a.o4||0; tO5+=a.o5||0;
   });
   RAW.txn.forEach(function(r){
     if(r[C.Y]!==2026) return;
@@ -1261,10 +1263,10 @@ function renderDsoKPI(){
   });
   var days=calcDaysYtd();
   var sDso=(tBal>0&&tRev>0)?(tBal/(tRev*VAT)*days):null;
-  var aDso=calcAgedDso(tBal,tOvd,tO1,tO2,tO3);
+  var aDso=calcAgedDso(tBal,tOvd,tO1,tO2,tO3,tO4,tO5);
   var fd=function(v){return v!=null?v.toFixed(1)+'d':'N/A';};
   g.innerHTML='<div class="dso-card"><div class="dso-label">DSO — Simple ('+AR_SNAP.date+')</div><div class="dso-val">'+fd(sDso)+'</div><div class="dso-sub">AR '+fmt(tBal)+' \xF7 (YTD Rev '+fmt(tRev)+' \xD71.15 VAT) \xD7 '+days+'d</div></div>'
-             +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">Age0-30\xD715 + Age31-60\xD745 + Age61+\xD790 (days, RAW aging)</div></div>';
+             +'<div class="dso-card"><div class="dso-label">DSO — Aged Weighted Avg</div><div class="dso-val">'+fd(aDso)+'</div><div class="dso-sub">0-30\xD715 + 31-60\xD745 + 61-180\xD7105 + 181-365\xD7250 + 365+\xD71370 (days)</div></div>';
 }
 
 // ======== STATUS CARDS ========
@@ -1770,7 +1772,7 @@ function renderTopTable(){
   // Sell-Thru aggregation
   data.forEach(function(r){
     var id=r[C.ID],yr=r[C.Y];
-    if(!am[id])am[id]={id:id,nm:r[C.NM],tm:r[C.TM],st:r[C.ST],v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+    if(!am[id])am[id]={id:id,nm:r[C.NM],tm:r[C.TM],st:r[C.ST],v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
     if(yr===2024){am[id].v24+=r[C.VL];am[id].q24+=r[C.QT];}
     else if(yr===2025){am[id].v25+=r[C.VL];am[id].q25+=r[C.QT];}
     else if(yr===2026){am[id].v26+=r[C.VL];am[id].q26+=r[C.QT];}
@@ -1794,7 +1796,7 @@ function renderTopTable(){
       am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
                opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
-               ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+               ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
     });
   })();
   // OUD merge (category-aware)
@@ -1849,7 +1851,7 @@ function renderTopTable(){
         am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
                  opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
-                 ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+                 ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
       });
     });
   }
@@ -1884,7 +1886,7 @@ function renderTopTable(){
       if(am[nid]){
         // Account in filtered sell-thru → merge AR data
         am[nid].ar_cl=a.cl||0; am[nid].ar_bal=a.bal||0; am[nid].ar_ovd=a.ovd||0;
-        am[nid].ar_o1=a.o1||0; am[nid].ar_o2=a.o2||0; am[nid].ar_o3=a.o3||0;
+        am[nid].ar_o1=a.o1||0; am[nid].ar_o2=a.o2||0; am[nid].ar_o3=a.o3||0; am[nid].ar_o4=a.o4||0; am[nid].ar_o5=a.o5||0;
       } else if(masterMap[nid] && masterMap[nid].team){
         // Known team in master (e.g. merged sub-ID with zero sell-thru, like Al Manea 구ID) →
         // use the real team so it respects the Team filter, instead of a blanket "AR Only" label
@@ -1893,7 +1895,7 @@ function renderTopTable(){
         am[nid]={id:nid,nm:a.nm||mmA.name||'',tm:tmA,st:stA,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
                  oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
-                 ar_cl:a.cl||0,ar_bal:a.bal||0,ar_ovd:a.ovd||0,ar_o1:a.o1||0,ar_o2:a.o2||0,ar_o3:a.o3||0,
+                 ar_cl:a.cl||0,ar_bal:a.bal||0,ar_ovd:a.ovd||0,ar_o1:a.o1||0,ar_o2:a.o2||0,ar_o3:a.o3||0,ar_o4:a.o4||0,ar_o5:a.o5||0,
                  col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
       } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
         // Truly AR-only: no sell-thru history at all, no master team either → add as "AR Only"
@@ -1901,7 +1903,7 @@ function renderTopTable(){
         am[nid]={id:nid,nm:a.nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
                  oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
-                 ar_cl:a.cl||0,ar_bal:a.bal||0,ar_ovd:a.ovd||0,ar_o1:a.o1||0,ar_o2:a.o2||0,ar_o3:a.o3||0,
+                 ar_cl:a.cl||0,ar_bal:a.bal||0,ar_ovd:a.ovd||0,ar_o1:a.o1||0,ar_o2:a.o2||0,ar_o3:a.o3||0,ar_o4:a.o4||0,ar_o5:a.o5||0,
                  col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
       }
       // else: sell-thru account filtered out by current filters → skip (don't add)
@@ -1921,14 +1923,14 @@ function renderTopTable(){
         if(!SEL.team.has(tmC)||!SEL.div.has(getDiv(tmC))||!SEL.status.has(stC)||!SEL.cls.has(CLS_MAP[String(nid)]||'Unclassified')) return;
         am[nid]={id:nid,nm:COL_SNAP.accts[id].nm||mmC.name||'',tm:tmC,st:stC,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
-                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,
+                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,
                  col_mtd:COL_SNAP.accts[id].mtd||0,col_ytd:COL_SNAP.accts[id].ytd||0,mar_tq:0,mar_tv:0};
       } else if(!ACCT_TEAM[nid] && SEL.div.has('Others')){
         // Truly collection-only: no sell-thru history, no master team either
         // Respects div filter: maps to Others division
         am[nid]={id:nid,nm:COL_SNAP.accts[id].nm||'',tm:'AR Only',st:'-',v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
                  pgi_v:0,pgi_q:0,rem_v:0,rem_q:0,opn_v:0,opn_q:0,
-                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,
+                 oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,
                  col_mtd:COL_SNAP.accts[id].mtd||0,col_ytd:COL_SNAP.accts[id].ytd||0,mar_tq:0,mar_tv:0};
       }
     });
@@ -1948,7 +1950,7 @@ function renderTopTable(){
       var nm=itgt.nm||String(id),tm='IR',st='New';
       for(var mi=0;mi<_ml.length;mi++){if(+_ml[mi].id===nid){nm=_ml[mi].name||nm;tm=_ml[mi].team||tm;st=_ml[mi].status||st;break;}}
       if(!SEL.team.has(tm)||!SEL.div.has(getDiv(tm))||!SEL.status.has(st)||!SEL.cls.has(CLS_MAP[String(nid)]||'Unclassified')) return; // team/div/status/cls filtered out
-      am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:itgt.mar_tq||0,mar_tv:itgt.mar_tv||0};
+      am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,mar_tq:itgt.mar_tq||0,mar_tv:itgt.mar_tv||0};
     });
   }
   // [FIX] Ensure ALL RSM FCST accounts appear in table regardless of date filter
@@ -1973,7 +1975,7 @@ function renderTopTable(){
     am[nid]={id:nid,nm:nm,tm:tm,st:st,v24:0,v25:0,v26:0,q24:0,q25:0,q26:0,
              pgi_v:0,pgi_q:0,pgi_dv:0,pgi_dq:0,rem_v:0,rem_q:0,rem_dv:0,rem_dq:0,
              opn_v:0,opn_q:0,opn_dv:0,opn_dq:0,oud_v:0,oud_q:0,oud_dv:0,oud_dq:0,
-             ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
+             ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,mar_tq:0,mar_tv:0};
   });}
   // am-level cls filter: accounts injected via non-txn paths or year-agnostic txn paths
   // must be cls-filtered here so table account count matches the Account dropdown
@@ -1993,7 +1995,7 @@ function renderTopTable(){
     var a=am[nid];
     a.v26_ytd=_v26YtdMap[+nid]||_v26YtdMap[nid]||0;
     a.dso_simple=(a.ar_bal>0&&a.v26_ytd>0)?(a.ar_bal/(a.v26_ytd*VAT)*_dDays):null;
-    a.dso_aged=(a.ar_bal>0)?calcAgedDso(a.ar_bal,a.ar_ovd,a.ar_o1,a.ar_o2,a.ar_o3):null;
+    a.dso_aged=(a.ar_bal>0)?calcAgedDso(a.ar_bal,a.ar_ovd,a.ar_o1,a.ar_o2,a.ar_o3,a.ar_o4,a.ar_o5):null;
   });
   // Update AR Only count
   var arOnlyCntEl=document.getElementById('arOnlyCount');
@@ -2050,7 +2052,9 @@ function getSortCols(){
     cols.push({key:'ar_ovd',label:'Overdue',get:function(a){return a.ar_ovd;},type:'num',grp:'ar'});
     cols.push({key:'ar_o1',label:'Age 0-30',get:function(a){return a.ar_o1;},type:'num',grp:'ar'});
     cols.push({key:'ar_o2',label:'Age 31-60',get:function(a){return a.ar_o2;},type:'num',grp:'ar'});
-    cols.push({key:'ar_o3',label:'Age 61+',get:function(a){return a.ar_o3;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o3',label:'Age 61-180',get:function(a){return a.ar_o3;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o4',label:'Age 181-365',get:function(a){return a.ar_o4;},type:'num',grp:'ar'});
+    cols.push({key:'ar_o5',label:'Age 365+',get:function(a){return a.ar_o5;},type:'num',grp:'ar'});
   }
   if(hasCol){
     cols.push({key:'col_mtd',label:'Col MTD',get:function(a){return a.col_mtd;},type:'num',grp:'col'});
@@ -2133,7 +2137,7 @@ function buildTable(arr){
   if(hasAr){
     var crCol=cols.find(function(cc){return cc.key==='cr_lim';});
     h+='<th class="num" style="'+thStyle+'color:var(--purple3);" onclick="sortTable(\'cr_lim\')">'+crCol.label+arrow('cr_lim')+'</th>';
-    ['ar_bal','ar_ovd','ar_o1','ar_o2','ar_o3'].forEach(function(k){
+    ['ar_bal','ar_ovd','ar_o1','ar_o2','ar_o3','ar_o4','ar_o5'].forEach(function(k){
       var c=cols.find(function(cc){return cc.key===k;});
       var sColor=k==='ar_bal'?'color:#a54b5e;':'color:#c4574f;';
       h+='<th class="num" style="'+thStyle+sColor+'" onclick="sortTable(\''+k+'\')">'+c.label+arrow(k)+'</th>';
@@ -2174,6 +2178,8 @@ function buildTable(arr){
       h+='<td class="num" data-col="ar_o1" data-val="'+(a.ar_o1||0)+'" style="color:var(--gold)">'+(a.ar_o1?fmtF(a.ar_o1):'-')+'</td>';
       h+='<td class="num" data-col="ar_o2" data-val="'+(a.ar_o2||0)+'" style="color:var(--orange)">'+(a.ar_o2?fmtF(a.ar_o2):'-')+'</td>';
       h+='<td class="num" data-col="ar_o3" data-val="'+(a.ar_o3||0)+'" style="color:var(--red)">'+(a.ar_o3?fmtF(a.ar_o3):'-')+'</td>';
+      h+='<td class="num" data-col="ar_o4" data-val="'+(a.ar_o4||0)+'" style="color:#8c1d2f">'+(a.ar_o4?fmtF(a.ar_o4):'-')+'</td>';
+      h+='<td class="num" data-col="ar_o5" data-val="'+(a.ar_o5||0)+'" style="color:#6b1020;font-weight:700">'+(a.ar_o5?fmtF(a.ar_o5):'-')+'</td>';
     }
     if(hasCol){
       h+='<td class="num" data-col="col_mtd" data-val="'+(a.col_mtd||0)+'" style="color:var(--green)">'+(a.col_mtd?fmtF(a.col_mtd):'-')+'</td>';
@@ -2187,7 +2193,7 @@ function buildTable(arr){
   });
   h+='</tbody>';
   // Build tfoot totals from arr
-  var tot={rsm:0,v24:0,v25:0,v26:0,pgi:0,rem:0,opn:0,oud:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,col_mtd:0,col_ytd:0,v26_ytd:0};
+  var tot={rsm:0,v24:0,v25:0,v26:0,pgi:0,rem:0,opn:0,oud:0,ar_cl:0,ar_bal:0,ar_ovd:0,ar_o1:0,ar_o2:0,ar_o3:0,ar_o4:0,ar_o5:0,col_mtd:0,col_ytd:0,v26_ytd:0};
   var rsmByTm={};
   arr.forEach(function(a){
     var rv=_rsmGet(a.id)||0;
@@ -2198,7 +2204,7 @@ function buildTable(arr){
     if(hasRemain) tot.rem+=(isVal?a.rem_v:a.rem_q)||0;
     if(hasOpen) tot.opn+=(isVal?a.opn_v:a.opn_q)||0;
     if(hasOud) tot.oud+=(isVal?a.oud_v:a.oud_q)||0;
-    if(hasAr){tot.ar_cl+=a.ar_cl||0;tot.ar_bal+=a.ar_bal||0;tot.ar_ovd+=a.ar_ovd||0;tot.ar_o1+=a.ar_o1||0;tot.ar_o2+=a.ar_o2||0;tot.ar_o3+=a.ar_o3||0;tot.v26_ytd+=a.v26_ytd||0;}
+    if(hasAr){tot.ar_cl+=a.ar_cl||0;tot.ar_bal+=a.ar_bal||0;tot.ar_ovd+=a.ar_ovd||0;tot.ar_o1+=a.ar_o1||0;tot.ar_o2+=a.ar_o2||0;tot.ar_o3+=a.ar_o3||0;tot.ar_o4+=a.ar_o4||0;tot.ar_o5+=a.ar_o5||0;tot.v26_ytd+=a.v26_ytd||0;}
     if(hasCol){tot.col_mtd+=a.col_mtd||0;tot.col_ytd+=a.col_ytd||0;}
   });
   _tblRsmTotal=tot.rsm;
@@ -2222,6 +2228,8 @@ function buildTable(arr){
     h+='<td '+tfN+'color:#8a6d2e;" data-col="ar_o1">'+fmtF(tot.ar_o1)+'</td>';
     h+='<td '+tfN+'color:#b45f18;" data-col="ar_o2">'+fmtF(tot.ar_o2)+'</td>';
     h+='<td '+tfN+'color:#b3261e;" data-col="ar_o3">'+fmtF(tot.ar_o3)+'</td>';
+    h+='<td '+tfN+'color:#8c1d2f;" data-col="ar_o4">'+fmtF(tot.ar_o4)+'</td>';
+    h+='<td '+tfN+'color:#6b1020;" data-col="ar_o5">'+fmtF(tot.ar_o5)+'</td>';
   }
   if(hasCol){
     h+='<td '+tfN+'color:#1d6b45;" data-col="col_mtd">'+fmtF(tot.col_mtd)+'</td>';
@@ -2229,7 +2237,7 @@ function buildTable(arr){
   }
   if(hasAr){
     var _ftSD=(tot.ar_bal>0&&tot.v26_ytd>0)?(tot.ar_bal/(tot.v26_ytd*VAT)*calcDaysYtd()):null;
-    var _ftAD=calcAgedDso(tot.ar_bal,tot.ar_ovd,tot.ar_o1,tot.ar_o2,tot.ar_o3);
+    var _ftAD=calcAgedDso(tot.ar_bal,tot.ar_ovd,tot.ar_o1,tot.ar_o2,tot.ar_o3,tot.ar_o4,tot.ar_o5);
     h+='<td class="num" style="'+tfS+'color:var(--teal);">'+(_ftSD!=null?_ftSD.toFixed(1):'-')+'</td>';
     h+='<td class="num" style="'+tfS+'color:var(--teal2);">'+(_ftAD!=null?_ftAD.toFixed(1):'-')+'</td>';
   }
@@ -2300,7 +2308,7 @@ function exportExcel(){
     if(hasRemain){ row.push(Math.round(isVal?a.rem_v:a.rem_q)); if(hasRemPrev) row.push(Math.round(isVal?a.rem_dv:a.rem_dq)); }
     if(hasOpen){ row.push(Math.round(isVal?a.opn_v:a.opn_q)); if(hasOpnPrev) row.push(Math.round(isVal?a.opn_dv:a.opn_dq)); }
     if(hasOud){ row.push(Math.round(isVal?a.oud_v:a.oud_q),Math.round(isVal?a.oud_dv:a.oud_dq)); }
-    if(hasAr){ row.push(Math.round(a.ar_cl),Math.round(a.ar_bal),Math.round(a.ar_ovd),Math.round(a.ar_o1),Math.round(a.ar_o2),Math.round(a.ar_o3)); row.push(a.dso_simple!=null?a.dso_simple.toFixed(1):'',a.dso_aged!=null?a.dso_aged.toFixed(1):''); }
+    if(hasAr){ row.push(Math.round(a.ar_cl),Math.round(a.ar_bal),Math.round(a.ar_ovd),Math.round(a.ar_o1),Math.round(a.ar_o2),Math.round(a.ar_o3),Math.round(a.ar_o4),Math.round(a.ar_o5)); row.push(a.dso_simple!=null?a.dso_simple.toFixed(1):'',a.dso_aged!=null?a.dso_aged.toFixed(1):''); }
     if(hasCol){ row.push(Math.round(a.col_mtd),Math.round(a.col_ytd)); }
     selYears.forEach(function(yr){ months.forEach(function(m){ var c=(acctMonthly[a.id]||{})[yr+'_'+m]||{v:0,q:0}; row.push(Math.round(c.v),Math.round(c.q)); }); });
     csv+=row.join(',')+'\n';
@@ -2682,7 +2690,7 @@ function fhGetAccounts(){
     accts.push({
       id:sid, name:a.nm||NAME_MAP[sid]||sid, cls:cls, pt:pt,
       cl:a.cl||0, bal:bal, ovd:ovd, ovd_rate:ovd_rate,
-      o1:a.o1||0, o2:a.o2||0, o3:a.o3||0,
+      o1:a.o1||0, o2:a.o2||0, o3:a.o3||0, o4:a.o4||0, o5:a.o5||0,
       dso_simple:dso_s, dso_aged:dso_a,
       ovd_avg:avgOvdR[cls]||20,
       x_simple:dso_s, x_aged:dso_a, y_val:-ovd_rate,
@@ -3454,7 +3462,9 @@ function renderFHTable(accts){
     +th('ovd_rate', 'OVD Rate')
     +th('o1',       'Age 0-30')
     +th('o2',       'Age 31-60')
-    +th('o3',       'Age 61+')
+    +th('o3',       'Age 61-180')
+    +th('o4',       'Age 181-365')
+    +th('o5',       'Age 365+')
     +th('dso',      dsoLabel)
     +th('vs180',    'vs DPO 180d')
     +th('quad',     'Quadrant')
