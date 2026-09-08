@@ -2110,7 +2110,11 @@ function buildTable(arr){
   if(hasOpen) h+='<th colspan="'+(hasOpnPrev?2:1)+'" class="col-group g-open">OPEN ('+unitLabel+')</th>';
   if(hasOud) h+='<th colspan="2" class="col-group g-oud">OUD</th>';
   if(hasAr) h+='<th colspan="1" class="col-group" style="background:var(--tint-purple2);color:var(--purple3);font-weight:700;">CREDIT LIMIT</th>';
-  if(hasAr) h+='<th colspan="7" class="col-group g-ar">AR / OVERDUE (SAR)</th>';
+  // ⚠️ 축 분리 (2026-09-08 형님 지적): Balance/Overdue 와 Age 버킷은 기준이 다르다.
+  // Σ(Age o1~o5) = Balance 이지 Overdue 가 아니다(1,120계정 전수 위반 0). 한 밴드로 묶으면
+  // "연체 1.03M인데 0-30일이 2.64M" 처럼 오류로 읽힌다 — 밴드를 2개로 쪼개고 항등식을 명시한다.
+  if(hasAr) h+='<th colspan="2" class="col-group g-ar">AR BALANCE / OVERDUE (SAR)</th>';
+  if(hasAr) h+='<th colspan="5" class="col-group g-ar" title="총 채권(Balance)의 연령 분해 — 5구간 합 = Balance. 연체(Overdue) 분해가 아니다.">AR AGING \u2014 \u03A3 = Balance (SAR)</th>';
   if(hasCol) h+='<th colspan="2" class="col-group g-col">COLLECTION (SAR)</th>';
   if(hasAr) h+='<th colspan="2" class="col-group g-dso">DSO (days)</th>';
   h+='</tr><tr>';
